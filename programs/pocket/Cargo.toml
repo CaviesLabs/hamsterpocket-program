@@ -1,0 +1,23 @@
+[package]
+name = "pocket"
+version = "0.1.0"
+description = "HamsterPocket created by 0xTraderTrou"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "pocket"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.26.0"
+anchor-spl = "0.26.0"
+spl-token = { version = "3.5.0", features = ["no-entrypoint"] }
+arrayref = "0.3.6"
+solana-address-lookup-table-program = "1.14.12"
