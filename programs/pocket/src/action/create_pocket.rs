@@ -38,15 +38,6 @@ pub struct CreatePocketParams {
 pub struct CreatePocketContext<'info> {
     pub mint_account: Account<'info, Mint>,
 
-    #[account(init,
-        token::mint = mint_account,
-        token::authority = pocket,
-        seeds = [TOKEN_ACCOUNT_SEED, mint_account.key().as_ref()],
-        payer = signer,
-        bump
-    )]
-    pub pocket_token_vault: Account<'info, TokenAccount>,
-
     #[account(
         init,
         seeds = [params.id.as_bytes().as_ref()],
@@ -78,17 +69,14 @@ pub struct CreatePocketContext<'info> {
 
 impl<'info> CreatePocketContext<'info> {
     pub fn execute(&mut self, params: CreatePocketParams, pocket_bump: u8, token_vault_bump: u8) -> Result<()> {
-        // Whitelist mint account
-        self.whitelist_mint_account(token_vault_bump).unwrap();
-
         // Update pocket state
-        self.update_pocket(params, pocket_bump).unwrap();
+        self.initialize_pocket(params, pocket_bump).unwrap();
 
         // Return instruction result
         Ok(())
     }
 
-    fn update_pocket(&mut self, params: CreatePocketParams, pocket_bump: u8) -> Result<()> {
+    fn initialize_pocket(&mut self, params: CreatePocketParams, pocket_bump: u8) -> Result<()> {
         // propagate data
         self.pocket.id = params.id;
         self.pocket.start_at = params.start_at;
@@ -106,32 +94,15 @@ impl<'info> CreatePocketContext<'info> {
         self.pocket.owner = self.signer.key();
         self.pocket.status = PocketStatus::Active;
 
-        Ok(())
-    }
-
-    fn whitelist_mint_account(&mut self, bump: u8) -> Result<()> {
-        // Avoid adding duplicated value
-        if self.pocket_registry.is_mint_account_existed(self.mint_account.key().clone()) {
-            return Err(PocketError::MintAccountExisted.into());
-        }
-
-        // Now we push into the allowed mint tokens array.
-        self.pocket_registry.allowed_mint_accounts.push(
-            MintInfo {
-                mint_account: self.mint_account.key().clone(),
-                token_account: self.pocket_token_vault.key(),
-                bump,
-                is_enabled: true
-            }
-        );
+        let pocket = self.pocket.clone();
 
         // emit event
         pocket_emit!(
-            VaultCreated {
-                actor: self.signer.key().clone(),
-                authority: self.pocket_registry.key().clone(),
-                associated_account: self.pocket_token_vault.key().clone(),
-                mint_account: self.mint_account.key().clone()
+          PocketCreated {
+                pocket_address: pocket.key().clone(),
+                market_key: pocket.market_key.clone(),
+                owner: pocket.owner.clone(),
+                name: pocket.name.clone()
             }
         );
 

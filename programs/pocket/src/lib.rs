@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{system_program, sysvar};
-use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 pub mod action;
 pub mod error;
@@ -16,7 +16,7 @@ pub use state::*;
 pub use event::*;
 pub use macros::*;
 
-declare_id!("EdeRcNsVGU1s1NXZZo8FhLD8iePxvoUCdbvwVGnj778f");
+declare_id!("k4odSWqFPwacCdZVUwngYiWMDugEawGGvZCLfcRrsBf");
 
 #[program]
 pub mod pocket {
@@ -31,6 +31,23 @@ pub mod pocket {
         ctx.accounts.execute(
             params,
             *ctx.bumps.get("pocket_registry").unwrap(),
+        ).unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
+
+
+    // Initialize contract once
+    pub fn create_pocket(
+        ctx: Context<CreatePocketContext>,
+        params: CreatePocketParams
+    ) -> Result<()> {
+        // process
+        ctx.accounts.execute(
+            params,
+            *ctx.bumps.get("pocket").unwrap(),
+            *ctx.bumps.get("pocket_token_vault").unwrap(),
         ).unwrap();
 
         // Program result should be ok.

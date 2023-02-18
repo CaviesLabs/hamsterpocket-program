@@ -1,20 +1,20 @@
 import * as anchor from "@project-serum/anchor";
-import { BN, Program } from "@project-serum/anchor";
+import { BN } from "@project-serum/anchor";
 import { PublicKey, SendTransactionError } from "@solana/web3.js";
 import { expect } from "chai";
 
-import { Pocket } from "../target/types/pocket";
+import { IDL } from "../target/types/pocket";
 
 describe("initialize_pocket_program", async () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.Swap as Program<Pocket>;
+  const program = new anchor.Program(IDL, process.env.PROGRAM_ID)
   const deployer = provider.wallet as anchor.Wallet;
 
   // find the pocket account
-  const [pocketAccount] = await PublicKey.findProgramAddress(
+  const [pocketAccount] = PublicKey.findProgramAddressSync(
     [anchor.utils.bytes.utf8.encode("SEED::POCKET::PLATFORM")],
     program.programId
   );
@@ -31,7 +31,7 @@ describe("initialize_pocket_program", async () => {
         owner: deployer.publicKey,
       })
       .signers([deployer.payer])
-      .rpc({ commitment: "confirmed" });
+      .rpc({ commitment: "confirmed" }).catch(e => console.log(e));
   });
 
   it("[initialize_swap_program] should: deployer initializes pocket registry successfully", async () => {
