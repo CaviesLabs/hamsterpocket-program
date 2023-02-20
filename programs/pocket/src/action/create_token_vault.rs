@@ -6,8 +6,7 @@ pub struct CreateTokenVaultContext<'info> {
     pub signer: Signer<'info>,
 
     #[account(
-        mut,
-        seeds = [PLATFORM_SEED],
+        seeds = [POCKET_SEED, pocket.id.as_bytes().as_ref()],
         bump = pocket.bump,
     )]
     pub pocket: Account<'info, Pocket>,
@@ -17,7 +16,7 @@ pub struct CreateTokenVaultContext<'info> {
     #[account(init,
         token::mint = mint_account,
         token::authority = pocket,
-        seeds = [TOKEN_ACCOUNT_SEED, mint_account.key().as_ref()],
+        seeds = [TOKEN_ACCOUNT_SEED, pocket.key().as_ref(), mint_account.key().as_ref()],
         payer = signer,
         bump
     )]
@@ -34,7 +33,7 @@ pub struct CreateTokenVaultContext<'info> {
 }
 
 impl<'info> CreateTokenVaultContext<'info> {
-    pub fn execute(&mut self, bump: u8) -> Result<()> {
+    pub fn execute(&mut self) -> Result<()> {
         // emit event
         pocket_emit!(
             VaultCreated {

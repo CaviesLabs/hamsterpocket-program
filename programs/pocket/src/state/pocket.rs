@@ -58,6 +58,43 @@ impl BuyCondition {
             condition: PriceCondition::default(),
         }
     }
+
+    // Check whether buy condition is valid
+    pub fn is_valid(condition: &BuyCondition) -> bool {
+        return condition.token_address != Pubkey::default() && match condition.condition {
+            PriceCondition::GT { value } => {
+                value.clone() > 0
+            },
+
+            PriceCondition::GTE { value } => {
+                value.clone() > 0
+            },
+
+            PriceCondition::LT { value } => {
+                value.clone() > 0
+            },
+
+            PriceCondition::LTE { value } => {
+                value.clone() > 0
+            },
+
+            PriceCondition::EQ { value } => {
+                value.clone() > 0
+            },
+
+            PriceCondition::NEQ { value } => {
+                value.clone() > 0
+            },
+
+            PriceCondition::BW { from_value, to_value } => {
+                to_value.clone() >= from_value.clone() && from_value.clone() > 0
+            },
+
+            PriceCondition::NBW { from_value, to_value } => {
+                to_value.clone() >= from_value.clone() && from_value.clone() > 0
+            },
+        }
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq)]
@@ -82,6 +119,24 @@ pub enum StopCondition {
 impl StopCondition {
     pub fn default() -> StopCondition {
         StopCondition::EndTime { value: 0 }
+    }
+
+    // Check whether the stop condition is valid
+    pub fn is_valid(stop_condition: &StopCondition) -> bool {
+        return match stop_condition {
+            StopCondition::EndTime { value } => {
+                value.clone() > 0
+            },
+            StopCondition::BaseTokenReach { value } => {
+                value.clone() > 0
+            },
+            StopCondition::TargetTokenReach { value } => {
+                value.clone() > 0
+            },
+            StopCondition::BatchAmountReach { value } => {
+                value.clone() > 0
+            }
+        }
     }
 }
 
@@ -188,7 +243,34 @@ impl Pocket {
         return self.status == PocketStatus::Active;
     }
 
+    // Check whether the pocket is able to swap
     pub fn is_ready_to_swap(&self) -> bool {
         return self.status == PocketStatus::Active && self.start_at >= Clock::get().unwrap().unix_timestamp as u64
+    }
+
+    // Check whether the pocket data is valid
+    pub fn validate_pocket_data(&self) -> Result<()> {
+        let pocket = self.clone();
+
+        assert_ne!(pocket.name, String::default());
+        assert_ne!(pocket.id, String::default());
+
+        assert_ne!(pocket.owner, Pubkey::default());
+        assert_ne!(pocket.market_key, Pubkey::default());
+        assert_ne!(pocket.base_token_address, Pubkey::default());
+        assert_ne!(pocket.target_token_address, Pubkey::default());
+
+        assert_eq!(pocket.start_at >= Clock::get().unwrap().unix_timestamp as u64, true);
+        assert_eq!(pocket.frequency.hours > 0, true);
+        assert_eq!(pocket.batch_volume > 0, true);
+
+        if pocket.buy_condition.unwrap_or(BuyCondition::default()) != BuyCondition::default() {
+            assert_eq!(BuyCondition::is_valid(&pocket.buy_condition.unwrap()), true);
+        }
+        for x in pocket.stop_conditions {
+            assert_eq!(StopCondition::is_valid(&x), true);
+        }
+
+        Ok(())
     }
 }

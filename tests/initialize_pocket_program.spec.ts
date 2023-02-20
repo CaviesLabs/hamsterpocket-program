@@ -10,7 +10,7 @@ describe("initialize_pocket_program", async () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = new anchor.Program(IDL, process.env.PROGRAM_ID)
+  const program = new anchor.Program(IDL, process.env.PROGRAM_ID);
   const deployer = provider.wallet as anchor.Wallet;
 
   // find the pocket account
@@ -31,11 +31,14 @@ describe("initialize_pocket_program", async () => {
         owner: deployer.publicKey,
       })
       .signers([deployer.payer])
-      .rpc({ commitment: "confirmed" }).catch(e => console.log(e));
+      .rpc({ commitment: "confirmed" })
+      .catch((e) => console.log(e));
   });
 
   it("[initialize_swap_program] should: deployer initializes pocket registry successfully", async () => {
-    const state = await program.account.pocketPlatformRegistry.fetch(pocketAccount);
+    const state = await program.account.pocketPlatformRegistry.fetch(
+      pocketAccount
+    );
 
     // Expect conditions
     expect(state.owner.equals(deployer.publicKey));

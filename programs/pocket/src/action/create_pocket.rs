@@ -36,11 +36,9 @@ pub struct CreatePocketParams {
 #[derive(Accounts)]
 #[instruction(params: CreatePocketParams)]
 pub struct CreatePocketContext<'info> {
-    pub mint_account: Account<'info, Mint>,
-
     #[account(
         init,
-        seeds = [params.id.as_bytes().as_ref()],
+        seeds = [POCKET_SEED, params.id.as_bytes().as_ref()],
         payer = signer,
         space = 10240,
         bump
@@ -68,7 +66,7 @@ pub struct CreatePocketContext<'info> {
 }
 
 impl<'info> CreatePocketContext<'info> {
-    pub fn execute(&mut self, params: CreatePocketParams, pocket_bump: u8, token_vault_bump: u8) -> Result<()> {
+    pub fn execute(&mut self, params: CreatePocketParams, pocket_bump: u8) -> Result<()> {
         // Update pocket state
         self.initialize_pocket(params, pocket_bump).unwrap();
 
@@ -94,7 +92,9 @@ impl<'info> CreatePocketContext<'info> {
         self.pocket.owner = self.signer.key();
         self.pocket.status = PocketStatus::Active;
 
+        // must check for valid data
         let pocket = self.pocket.clone();
+        pocket.validate_pocket_data().unwrap();
 
         // emit event
         pocket_emit!(

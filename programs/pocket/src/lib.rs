@@ -37,6 +37,16 @@ pub mod pocket {
         Ok(())
     }
 
+    // Initialize contract once
+    pub fn create_token_vault(
+        ctx: Context<CreateTokenVaultContext>,
+    ) -> Result<()> {
+        // process
+        ctx.accounts.execute().unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
 
     // Initialize contract once
     pub fn create_pocket(
@@ -47,7 +57,6 @@ pub mod pocket {
         ctx.accounts.execute(
             params,
             *ctx.bumps.get("pocket").unwrap(),
-            *ctx.bumps.get("pocket_token_vault").unwrap(),
         ).unwrap();
 
         // Program result should be ok.
