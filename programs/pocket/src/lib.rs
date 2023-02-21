@@ -16,7 +16,7 @@ pub use state::*;
 pub use event::*;
 pub use macros::*;
 
-declare_id!("G23zULdpfEmPs9pNBJnJ67kpRJjt9g442miPu1QX85tK");
+declare_id!("DL1BQwRmN4Ye4fsmDnPipNrm1XU24x8yDU7c5Ltsqvvc");
 
 #[program]
 pub mod pocket {

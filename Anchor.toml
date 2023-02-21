@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-pocket = "G23zULdpfEmPs9pNBJnJ67kpRJjt9g442miPu1QX85tK"
+pocket = "DL1BQwRmN4Ye4fsmDnPipNrm1XU24x8yDU7c5Ltsqvvc"
 
 [registry]
 url = "https://api.apr.dev"
