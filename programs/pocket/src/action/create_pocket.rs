@@ -79,8 +79,8 @@ impl<'info> CreatePocketContext<'info> {
         self.pocket.id = params.id;
         self.pocket.start_at = params.start_at;
         self.pocket.name = params.name;
-        self.pocket.base_token_address = params.base_token_address;
-        self.pocket.target_token_address = params.target_token_address;
+        self.pocket.base_token_mint_address = params.base_token_address;
+        self.pocket.target_token_mint_address = params.target_token_address;
         self.pocket.batch_volume = params.batch_volume;
         self.pocket.buy_condition = params.buy_condition;
         self.pocket.stop_conditions = params.stop_conditions;

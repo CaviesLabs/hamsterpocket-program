@@ -19,7 +19,6 @@ pub struct PocketConfigUpdated {
     pub max_allowed_options: u8,
 }
 
-
 /// Emitted when a [VaultCreated] is created.
 #[event]
 pub struct VaultCreated {
@@ -36,6 +35,18 @@ pub struct VaultCreated {
 /// Emitted when a [PocketCreated] is created.
 #[event]
 pub struct PocketCreated {
+    #[index]
+    pub owner: Pubkey,
+    #[index]
+    pub pocket_address: Pubkey,
+    #[index]
+    pub market_key: Pubkey,
+    pub name: String,
+}
+
+/// Emitted when a [PocketUpdated] is created.
+#[event]
+pub struct PocketUpdated {
     #[index]
     pub owner: Pubkey,
     #[index]

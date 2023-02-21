@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{system_program, sysvar};
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 pub mod action;
 pub mod error;
@@ -37,7 +37,17 @@ pub mod pocket {
         Ok(())
     }
 
-    // Initialize contract once
+    pub fn update_pocket_registry(
+        ctx: Context<UpdatePocketRegistryContext>,
+        params: UpdatePocketRegistryParams
+    ) -> Result<()> {
+        // process
+        ctx.accounts.execute(params).unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
+
     pub fn create_token_vault(
         ctx: Context<CreateTokenVaultContext>,
     ) -> Result<()> {
@@ -48,7 +58,6 @@ pub mod pocket {
         Ok(())
     }
 
-    // Initialize contract once
     pub fn create_pocket(
         ctx: Context<CreatePocketContext>,
         params: CreatePocketParams
@@ -62,4 +71,42 @@ pub mod pocket {
         // Program result should be ok.
         Ok(())
     }
+
+    pub fn update_pocket(
+        ctx: Context<UpdatePocketContext>,
+        params: UpdatePocketParams
+    ) -> Result<()> {
+        // process
+        ctx.accounts.execute(params).unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
+
+    pub fn deposit(
+        ctx: Context<DepositContext>,
+        params: DepositParams
+    ) -> Result<()> {
+        // process
+        ctx.accounts.execute(
+            params
+        ).unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
+
+    pub fn withdraw(
+        ctx: Context<WithdrawContext>,
+        params: WithdrawParams
+    ) -> Result<()> {
+        // process
+        ctx.accounts.execute(
+            params
+        ).unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
+
 }

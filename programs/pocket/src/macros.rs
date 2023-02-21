@@ -3,7 +3,7 @@ pub use crate::*;
 
 #[macro_export]
 macro_rules! token_account_signer {
-    ($seed: expr, $bump: expr) => {
-        &[&[$seed, $bump][..]]
+    ($pre_seed: expr, $seed: expr, $bump: expr) => {
+        &[&[$pre_seed, $seed, $bump][..]]
     };
 }

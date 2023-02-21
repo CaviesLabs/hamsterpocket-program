@@ -182,10 +182,10 @@ pub struct Pocket {
     pub status: PocketStatus,
 
     // Define base token
-    pub base_token_address: Pubkey,
+    pub base_token_mint_address: Pubkey,
 
     // Define target token
-    pub target_token_address: Pubkey,
+    pub target_token_mint_address: Pubkey,
 
     // Define the market key
     pub market_key: Pubkey,
@@ -205,7 +205,6 @@ pub struct Pocket {
     // Define the frequency
     pub frequency: DateDuration,
 
-    ////// Define progress fields ////////
     // Show total deposited base token balance
     pub total_deposit_amount: u64,
 
@@ -233,6 +232,11 @@ impl Pocket {
         return self.status != PocketStatus::Closed && self.status != PocketStatus::Withdrawn;
     }
 
+    // Check whether the pocket is able to close
+    pub fn is_able_to_withdraw(&self) -> bool {
+        return self.status == PocketStatus::Closed;
+    }
+
     // Check whether the pocket is able to restart
     pub fn is_able_to_restart(&self) -> bool {
         return self.status == PocketStatus::Paused;
@@ -252,23 +256,23 @@ impl Pocket {
     pub fn validate_pocket_data(&self) -> Result<()> {
         let pocket = self.clone();
 
-        assert_ne!(pocket.name, String::default());
-        assert_ne!(pocket.id, String::default());
+        assert_ne!(pocket.name, String::default(), "Must initialize pocket name");
+        assert_ne!(pocket.id, String::default(), "Pocket Id is not valid");
 
-        assert_ne!(pocket.owner, Pubkey::default());
-        assert_ne!(pocket.market_key, Pubkey::default());
-        assert_ne!(pocket.base_token_address, Pubkey::default());
-        assert_ne!(pocket.target_token_address, Pubkey::default());
+        assert_ne!(pocket.owner, Pubkey::default(), "Owner is not valid");
+        assert_ne!(pocket.market_key, Pubkey::default(), "Not valid pubkey");
+        assert_ne!(pocket.base_token_mint_address, Pubkey::default(), "Not valid pubkey");
+        assert_ne!(pocket.target_token_mint_address, Pubkey::default(), "Not valid pubkey");
 
-        assert_eq!(pocket.start_at >= Clock::get().unwrap().unix_timestamp as u64, true);
-        assert_eq!(pocket.frequency.hours > 0, true);
-        assert_eq!(pocket.batch_volume > 0, true);
+        assert_eq!(pocket.start_at >= Clock::get().unwrap().unix_timestamp as u64, true, "Not valid timestamp");
+        assert_eq!(pocket.frequency.hours > 0, true, "Not valid frequency");
+        assert_eq!(pocket.batch_volume > 0, true, "Not valid batch volume");
 
         if pocket.buy_condition.unwrap_or(BuyCondition::default()) != BuyCondition::default() {
-            assert_eq!(BuyCondition::is_valid(&pocket.buy_condition.unwrap()), true);
+            assert_eq!(BuyCondition::is_valid(&pocket.buy_condition.unwrap()), true, "Not valid buy condition");
         }
         for x in pocket.stop_conditions {
-            assert_eq!(StopCondition::is_valid(&x), true);
+            assert_eq!(StopCondition::is_valid(&x), true, "Not valid stop condition");
         }
 
         Ok(())

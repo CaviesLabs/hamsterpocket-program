@@ -55,9 +55,9 @@ describe("create_pocket", async () => {
     expect(pocket.id === pocketData.id).to.be.true;
     expect(pocket.startAt.eq(pocketData.startAt)).to.be.true;
     expect(pocket.marketKey.equals(pocketData.marketKey)).to.be.true;
-    expect(pocket.targetTokenAddress.equals(pocketData.targetTokenAddress)).to
+    expect(pocket.targetTokenMintAddress.equals(pocketData.targetTokenAddress)).to
       .be.true;
-    expect(pocket.baseTokenAddress.equals(pocketData.baseTokenAddress)).to.be
+    expect(pocket.baseTokenMintAddress.equals(pocketData.baseTokenAddress)).to.be
       .true;
     // @ts-ignore
     expect(pocket.stopConditions.length === 0).to.be.true;

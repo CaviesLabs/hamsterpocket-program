@@ -1,5 +1,4 @@
 use crate::*;
-use std::borrow::Borrow;
 
 // ================ Pocket Platform Config ================ //
 // Here we define the account state that holds the administration info.
@@ -23,12 +22,6 @@ pub struct PocketPlatformRegistry {
 
     // Bump to help define the PDA of pocket account
     pub bump: u8,
-
-    // define max item can be traded.
-    pub max_allowed_items: u8,
-
-    // define max allowed options can be asked.
-    pub max_allowed_options: u8,
 
     // define whitelisted mint token account
     pub allowed_mint_accounts: Vec<MintInfo>,
@@ -70,10 +63,9 @@ impl PocketPlatformRegistry {
 
     // Get mint info
     pub fn get_mint_info(&self, mint_account: Pubkey) -> &MintInfo {
-        return self.allowed_mint_accounts.iter()
+        return &self.allowed_mint_accounts.iter()
             .find(|&mint_account_key| mint_account_key.mint_account == mint_account.key().clone())
-            .unwrap()
-            .borrow();
+            .unwrap();
     }
 
     // Detect if a pubkey was belong to an operator

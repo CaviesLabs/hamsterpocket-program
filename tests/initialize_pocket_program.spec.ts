@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { BN } from "@project-serum/anchor";
-import { PublicKey, SendTransactionError } from "@solana/web3.js";
+import { Keypair, PublicKey, SendTransactionError } from "@solana/web3.js";
 import { expect } from "chai";
 
 import { IDL } from "../target/types/pocket";
@@ -19,12 +19,13 @@ describe("initialize_pocket_program", async () => {
     program.programId
   );
 
+  const operator = Keypair.generate().publicKey;
+
   before(async () => {
     // Initialize first
     await program.methods
       .initialize({
-        maxAllowedItems: new BN(5).toNumber(),
-        maxAllowedOptions: new BN(5).toNumber(),
+        operators: [operator],
       })
       .accounts({
         pocketRegistry: pocketAccount,
@@ -43,8 +44,8 @@ describe("initialize_pocket_program", async () => {
     // Expect conditions
     expect(state.owner.equals(deployer.publicKey));
     expect(state.wasInitialized).equals(true);
-    expect(state.maxAllowedItems).equals(5);
-    expect(state.maxAllowedOptions).equals(5);
+    expect(state.operators.length).equals(1);
+    expect(state.operators[0].equals(operator)).to.be.true;
 
     // @ts-ignore
     expect(state.allowedMintAccounts.length).equals(0);
@@ -54,8 +55,7 @@ describe("initialize_pocket_program", async () => {
     try {
       await program.methods
         .initialize({
-          maxAllowedItems: new BN(6).toNumber(),
-          maxAllowedOptions: new BN(5).toNumber(),
+          operators: [operator]
         })
         .accounts({
           pocketRegistry: pocketAccount,
