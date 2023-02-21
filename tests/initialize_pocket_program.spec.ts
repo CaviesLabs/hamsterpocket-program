@@ -1,5 +1,4 @@
 import * as anchor from "@project-serum/anchor";
-import { BN } from "@project-serum/anchor";
 import { Keypair, PublicKey, SendTransactionError } from "@solana/web3.js";
 import { expect } from "chai";
 
