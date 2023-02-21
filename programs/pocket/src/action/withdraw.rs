@@ -93,7 +93,7 @@ impl<'info> WithdrawContext<'info> {
                 },
                 signer,
             ),
-            self.pocket_base_token_vault.amount,
+            self.pocket_target_token_vault.amount,
         ).unwrap();
 
         // update credited balance
