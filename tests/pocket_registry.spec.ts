@@ -84,9 +84,10 @@ describe("pocket_registry", async () => {
       .rpc({ commitment: "confirmed" })
       .catch((e) => console.log(e));
 
-    const pocketRegistryAccount = await program.account.pocketPlatformRegistry.fetch(pocketRegistry);
+    const pocketRegistryAccount =
+      await program.account.pocketPlatformRegistry.fetch(pocketRegistry);
 
     expect(pocketRegistryAccount.operators.length).eq(1);
     expect(pocketRegistryAccount.operators[0].equals(newOperator)).to.be.true;
-  })
+  });
 });

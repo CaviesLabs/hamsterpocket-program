@@ -52,6 +52,7 @@ describe("pocket", async () => {
     // @ts-ignore
     expect(!!pocket.status.active).to.be.true;
     expect(pocket.name === pocketData.name).to.be.true;
+    expect(pocket.owner.equals(owner.publicKey)).to.be.true;
     expect(pocket.id === pocketData.id).to.be.true;
     expect(pocket.startAt.eq(pocketData.startAt)).to.be.true;
     expect(pocket.marketKey.equals(pocketData.marketKey)).to.be.true;
@@ -201,5 +202,5 @@ describe("pocket", async () => {
     const pocket = await program.account.pocket.fetch(pocketAccount);
 
     expect(!!pocket.status.closed).to.be.true;
-  })
+  });
 });

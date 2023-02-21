@@ -99,12 +99,9 @@ pub mod pocket {
 
     pub fn withdraw(
         ctx: Context<WithdrawContext>,
-        params: WithdrawParams
     ) -> Result<()> {
         // process
-        ctx.accounts.execute(
-            params
-        ).unwrap();
+        ctx.accounts.execute().unwrap();
 
         // Program result should be ok.
         Ok(())

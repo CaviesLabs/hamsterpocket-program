@@ -1,22 +1,13 @@
 use crate::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Debug, PartialEq)]
-pub struct WithdrawParams {
-    pub base_token_vault_bump: u8,
-    pub target_token_vault_bump: u8,
-}
-
 #[derive(Accounts)]
-#[instruction(params: WithdrawParams)]
 pub struct WithdrawContext<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
     #[account(
         mut,
-        seeds = [POCKET_SEED, pocket.id.as_bytes().as_ref()],
-        bump = pocket.bump,
-        owner = signer.key() @ PocketError::OnlyOwner
+        constraint = pocket.owner == signer.key() @ PocketError::OnlyOwner
     )]
     pub pocket: Account<'info, Pocket>,
 
@@ -28,18 +19,10 @@ pub struct WithdrawContext<'info> {
     /// CHECK: the signer token account can be verified later
     pub signer_target_token_account: AccountInfo<'info>,
 
-    #[account(
-        mut,
-        seeds = [TOKEN_ACCOUNT_SEED, pocket.id.as_bytes().as_ref(), pocket.base_token_mint_address.key().as_ref()],
-        bump = params.base_token_vault_bump
-    )]
+    #[account(mut)]
     pub pocket_base_token_vault: Account<'info, TokenAccount>,
 
-    #[account(
-        mut,
-        seeds = [TOKEN_ACCOUNT_SEED, pocket.id.as_bytes().as_ref(), pocket.target_token_mint_address.key().as_ref()],
-        bump = params.target_token_vault_bump
-    )]
+    #[account(mut)]
     pub pocket_target_token_vault: Account<'info, TokenAccount>,
 
     #[account(address = system_program::ID)]
@@ -50,23 +33,20 @@ pub struct WithdrawContext<'info> {
 }
 
 impl<'info> WithdrawContext<'info> {
-    pub fn execute(&mut self, params: WithdrawParams) -> Result<()> {
+    pub fn execute(&mut self) -> Result<()> {
         let pocket = &mut self.pocket;
 
         assert_eq!(pocket.is_able_to_withdraw(), true, "The pocket is not able to be withdrawn");
 
         let pocket_base_token_vault = &self.pocket_base_token_vault;
         let pocket_target_token_vault = &self.pocket_target_token_vault;
-        let signer_base_token_vault = &self.pocket_target_token_vault;
-        let signer_target_token_vault = &self.pocket_target_token_vault;
+        
+        let signer_base_token_vault = &self.signer_base_token_account;
+        let signer_target_token_vault = &self.signer_target_token_account;
 
         // find the bump to sign with the pda
         let bump = &[pocket.bump][..];
-        let signer = token_account_signer!(
-            TOKEN_ACCOUNT_SEED,
-            pocket.id.as_bytes().as_ref(),
-            bump
-        );
+        let signer =  &[&[POCKET_SEED, pocket.id.as_bytes().as_ref(), bump][..]];
 
         // transfer the token
         token::transfer(

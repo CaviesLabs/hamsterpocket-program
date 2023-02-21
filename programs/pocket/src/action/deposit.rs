@@ -2,7 +2,6 @@ use crate::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Debug, PartialEq)]
 pub struct DepositParams {
-    pub base_token_vault_bump: u8,
     pub deposit_amount: u64
 }
 
@@ -18,15 +17,12 @@ pub struct DepositContext<'info> {
 
     #[account(
         mut,
-        seeds = [POCKET_SEED, pocket.id.as_bytes().as_ref()],
-        bump = pocket.bump,
+        constraint = pocket.owner == signer.key() @ PocketError::OnlyOwner
     )]
     pub pocket: Account<'info, Pocket>,
 
     #[account(
         mut,
-        seeds = [TOKEN_ACCOUNT_SEED, pocket.id.as_bytes().as_ref(), pocket.base_token_mint_address.key().as_ref()],
-        bump = params.base_token_vault_bump
     )]
     pub pocket_base_token_vault: Account<'info, TokenAccount>,
 
