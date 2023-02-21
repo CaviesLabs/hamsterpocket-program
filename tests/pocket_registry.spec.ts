@@ -4,7 +4,7 @@ import { expect } from "chai";
 
 import { IDL } from "../target/types/pocket";
 
-describe("initialize_pocket_program", async () => {
+describe("pocket_registry", async () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
@@ -13,7 +13,7 @@ describe("initialize_pocket_program", async () => {
   const deployer = provider.wallet as anchor.Wallet;
 
   // find the pocket account
-  const [pocketAccount] = PublicKey.findProgramAddressSync(
+  const [pocketRegistry] = PublicKey.findProgramAddressSync(
     [anchor.utils.bytes.utf8.encode("SEED::POCKET::PLATFORM")],
     program.programId
   );
@@ -27,7 +27,7 @@ describe("initialize_pocket_program", async () => {
         operators: [operator],
       })
       .accounts({
-        pocketRegistry: pocketAccount,
+        pocketRegistry,
         owner: deployer.publicKey,
       })
       .signers([deployer.payer])
@@ -37,7 +37,7 @@ describe("initialize_pocket_program", async () => {
 
   it("[initialize_swap_program] should: deployer initializes pocket registry successfully", async () => {
     const state = await program.account.pocketPlatformRegistry.fetch(
-      pocketAccount
+      pocketRegistry
     );
 
     // Expect conditions
@@ -54,10 +54,10 @@ describe("initialize_pocket_program", async () => {
     try {
       await program.methods
         .initialize({
-          operators: [operator]
+          operators: [operator],
         })
         .accounts({
-          pocketRegistry: pocketAccount,
+          pocketRegistry: pocketRegistry,
           owner: deployer.publicKey,
         })
         .signers([deployer.payer])
@@ -68,4 +68,25 @@ describe("initialize_pocket_program", async () => {
       expect(e instanceof SendTransactionError).to.be.true;
     }
   });
+
+  it("[update_operator] should: deployer can update operators list", async () => {
+    const newOperator = Keypair.generate().publicKey;
+
+    await program.methods
+      .updatePocketRegistry({
+        operators: [newOperator],
+      })
+      .accounts({
+        pocketRegistry,
+        owner: deployer.publicKey,
+      })
+      .signers([deployer.payer])
+      .rpc({ commitment: "confirmed" })
+      .catch((e) => console.log(e));
+
+    const pocketRegistryAccount = await program.account.pocketPlatformRegistry.fetch(pocketRegistry);
+
+    expect(pocketRegistryAccount.operators.length).eq(1);
+    expect(pocketRegistryAccount.operators[0].equals(newOperator)).to.be.true;
+  })
 });

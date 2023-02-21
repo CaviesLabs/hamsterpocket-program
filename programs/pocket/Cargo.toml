@@ -17,7 +17,7 @@ default = []
 
 [dependencies]
 anchor-lang = "0.26.0"
-anchor-spl = "0.26.0"
+anchor-spl = {version = "0.26.0", features = ["dex"]}
 spl-token = { version = "3.5.0", features = ["no-entrypoint"] }
 arrayref = "0.3.6"
 solana-address-lookup-table-program = "1.14.12"
