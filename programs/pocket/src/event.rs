@@ -15,8 +15,7 @@ macro_rules! pocket_emit {
 pub struct PocketConfigUpdated {
     #[index]
     pub actor: Pubkey,
-    pub max_allowed_items: u8,
-    pub max_allowed_options: u8,
+    pub operators: Vec<Pubkey>,
 }
 
 /// Emitted when a [VaultCreated] is created.
@@ -51,7 +50,32 @@ pub struct PocketUpdated {
     pub owner: Pubkey,
     #[index]
     pub pocket_address: Pubkey,
+    pub status: PocketStatus
+}
+
+/// Emitted when a [PocketDeposited] is created.
+#[event]
+pub struct PocketDeposited {
     #[index]
-    pub market_key: Pubkey,
-    pub name: String,
+    pub owner: Pubkey,
+    #[index]
+    pub pocket_address: Pubkey,
+    #[index]
+    pub mint_address: Pubkey,
+    pub amount: u64
+}
+
+/// Emitted when a [PocketWithdrawn] is created.
+#[event]
+pub struct PocketWithdrawn {
+    #[index]
+    pub owner: Pubkey,
+    #[index]
+    pub pocket_address: Pubkey,
+    #[index]
+    pub base_token_mint_address: Pubkey,
+    pub base_token_amount: u64,
+    #[index]
+    pub target_token_mint_address: Pubkey,
+    pub target_token_amount: u64
 }

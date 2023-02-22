@@ -35,6 +35,13 @@ impl<'info> UpdatePocketRegistryContext<'info> {
         
         pocket_registry.operators = params.operators.clone();
 
+        pocket_emit!(
+            PocketConfigUpdated {
+                actor: self.owner.key(),
+                operators: params.operators.clone()
+            }
+        );
+
         Ok(())
     }
 }

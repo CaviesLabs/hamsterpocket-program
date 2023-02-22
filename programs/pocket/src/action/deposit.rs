@@ -56,6 +56,16 @@ impl<'info> DepositContext<'info> {
         pocket.base_token_balance += params.deposit_amount.clone();
         pocket.total_deposit_amount += params.deposit_amount.clone();
 
+        // emit event
+        pocket_emit!(
+            PocketDeposited {
+               owner: self.signer.key(),
+               pocket_address: pocket.key(),
+               mint_address: pocket.base_token_mint_address,
+               amount: params.deposit_amount.clone(),
+            }
+        );
+
         Ok(())
     }
 }

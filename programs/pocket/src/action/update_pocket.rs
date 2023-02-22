@@ -48,6 +48,15 @@ impl<'info> UpdatePocketContext<'info> {
         }
 
         pocket.status = params.status;
+
+        pocket_emit!(
+            PocketUpdated {
+                owner: pocket.owner,
+                pocket_address: pocket.key(),
+                status: pocket.status,
+            }
+        );
+
         Ok(())
     }
 }

@@ -40,13 +40,13 @@ impl<'info> WithdrawContext<'info> {
 
         let pocket_base_token_vault = &self.pocket_base_token_vault;
         let pocket_target_token_vault = &self.pocket_target_token_vault;
-        
+
         let signer_base_token_vault = &self.signer_base_token_account;
         let signer_target_token_vault = &self.signer_target_token_account;
 
         // find the bump to sign with the pda
         let bump = &[pocket.bump][..];
-        let signer =  &[&[POCKET_SEED, pocket.id.as_bytes().as_ref(), bump][..]];
+        let signer = &[&[POCKET_SEED, pocket.id.as_bytes().as_ref(), bump][..]];
 
         // transfer the token
         token::transfer(
@@ -79,6 +79,18 @@ impl<'info> WithdrawContext<'info> {
         // update credited balance
         pocket.base_token_balance = 0;
         pocket.target_token_balance = 0;
+
+        // emit event
+        pocket_emit!(
+            PocketWithdrawn {
+               owner: self.signer.key(),
+               pocket_address: pocket.key(),
+               base_token_mint_address: pocket.base_token_mint_address,
+               base_token_amount: self.pocket_base_token_vault.amount,
+               target_token_mint_address: pocket.target_token_mint_address,
+               target_token_amount: self.pocket_target_token_vault.amount
+            }
+        );
 
         Ok(())
     }

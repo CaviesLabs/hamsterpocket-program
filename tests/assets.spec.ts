@@ -1,8 +1,8 @@
 import * as anchor from "@project-serum/anchor";
-import { Keypair, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
-import { getAccount } from "@solana/spl-token";
 import { getFixtures } from "./test.helper";
+import { BorshCoder, EventParser } from "@project-serum/anchor";
 
 describe("assets", async () => {
   let fixtures: Awaited<ReturnType<typeof getFixtures>>;
@@ -69,19 +69,22 @@ describe("assets", async () => {
       .signers([owner])
       .postInstructions(inx)
       .rpc({ commitment: "confirmed" })
+      .then(r => r)
       .catch((e) => console.log(e));
   });
 
   it("[deposit] should: owner can deposit assets to pocket successfully", async () => {
     const {
+      provider,
       program,
       pocketAccount,
       owner,
+      baseMintAccount,
       baseMintVaultAccount,
       ownerBaseTokenAccount,
     } = fixtures;
 
-    await program.methods
+    const txId = await program.methods
       .deposit({
         depositAmount: new anchor.BN(LAMPORTS_PER_SOL * 2),
       })
@@ -92,13 +95,39 @@ describe("assets", async () => {
         signerTokenAccount: ownerBaseTokenAccount,
       })
       .signers([owner])
-      .rpc()
+      .rpc({commitment: "confirmed"})
       .catch((e) => console.log(e));
 
     const pocketState = await program.account.pocket.fetch(pocketAccount);
 
     expect(pocketState.totalDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))).to.be.true;
     expect(pocketState.baseTokenBalance.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))).to.be.true;
+
+    // expect log
+    const transaction = await provider.connection.getParsedTransaction(txId as string, {
+      commitment: "confirmed",
+    });
+    const eventParser = new EventParser(
+      program.programId,
+      new BorshCoder(program.idl)
+    );
+    const [event] = eventParser.parseLogs(transaction.meta.logMessages);
+
+    // Expect emitted logs
+    expect(event.name).eq('PocketDeposited');
+    expect(
+      (event.data as any).owner.equals(owner.publicKey)
+    ).equals(true);
+    expect(
+      (event.data as any).pocketAddress.equals(pocketAccount)
+    ).equals(true);
+     expect(
+      (event.data as any).mintAddress.equals(baseMintAccount)
+    ).equals(true);
+     expect(
+      (event.data as any).amount.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))
+    ).equals(true);
+
   });
 
   it("[withdraw] should: owner can withdraw assets from pocket successfully", async () => {
@@ -106,10 +135,13 @@ describe("assets", async () => {
       program,
       pocketAccount,
       owner,
+      baseMintAccount,
+      targetMintAccount,
       baseMintVaultAccount,
       targetMintVaultAccount,
       ownerBaseTokenAccount,
-      ownerTargetTokenAccount
+      ownerTargetTokenAccount,
+      provider
     } = fixtures;
 
     await program.methods
@@ -121,10 +153,10 @@ describe("assets", async () => {
         pocket: pocketAccount,
       })
       .signers([owner])
-      .rpc()
+      .rpc({commitment: "confirmed"})
       .catch((e) => console.log(e));
 
-    await program.methods
+    const txId = await program.methods
       .withdraw()
       .accounts({
         signer: owner.publicKey,
@@ -135,12 +167,46 @@ describe("assets", async () => {
         signerTargetTokenAccount: ownerTargetTokenAccount
       })
       .signers([owner])
-      .rpc()
+      .rpc({commitment: "confirmed"})
       .catch((e) => console.log(e));
 
     const pocketState = await program.account.pocket.fetch(pocketAccount);
 
     expect(pocketState.totalDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))).to.be.true;
     expect(pocketState.baseTokenBalance.eq(new anchor.BN(0))).to.be.true;
+    expect(pocketState.targetTokenBalance.eq(new anchor.BN(0))).to.be.true;
+
+    // expect log
+    const transaction = await provider.connection.getParsedTransaction(txId as string, {
+      commitment: "confirmed",
+    });
+    const eventParser = new EventParser(
+      program.programId,
+      new BorshCoder(program.idl)
+    );
+    const [event] = eventParser.parseLogs(transaction.meta.logMessages);
+
+    // Expect emitted logs
+    expect(event.name).eq("PocketWithdrawn");
+    expect(
+      (event.data as any).owner.equals(owner.publicKey)
+    ).equals(true);
+    expect(
+      (event.data as any).pocketAddress.equals(pocketAccount)
+    ).equals(true);
+
+    expect(
+      (event.data as any).baseTokenMintAddress.equals(baseMintAccount)
+    ).equals(true);
+    expect(
+      (event.data as any).baseTokenAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))
+    ).equals(true);
+
+    expect(
+      (event.data as any).targetTokenMintAddress.equals(targetMintAccount)
+    ).equals(true);
+    expect(
+      (event.data as any).targetTokenAmount.eq(new anchor.BN(0))
+    ).equals(true);
   })
 });

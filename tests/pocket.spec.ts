@@ -3,6 +3,7 @@ import { Keypair, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
 import { expect } from "chai";
 import { getAccount } from "@solana/spl-token";
 import { getFixtures } from "./test.helper";
+import { BorshCoder, EventParser } from "@project-serum/anchor";
 
 describe("pocket", async () => {
   let fixtures: Awaited<ReturnType<typeof getFixtures>>;
@@ -13,6 +14,7 @@ describe("pocket", async () => {
 
   it("[create_pocket] should: anyone can create their pocket", async () => {
     const {
+      provider,
       pocketId,
       program,
       pocketRegistry,
@@ -35,7 +37,7 @@ describe("pocket", async () => {
       frequency: { hours: new anchor.BN(1) },
     };
 
-    await program.methods
+    const txId = await program.methods
       // @ts-ignore
       .createPocket(pocketData)
       .accounts({
@@ -65,6 +67,32 @@ describe("pocket", async () => {
     expect(!!pocket.buyCondition).to.be.false;
     expect(pocket.frequency.hours.eq(pocketData.frequency.hours)).to.be.true;
     expect(pocket.batchVolume.eq(pocketData.batchVolume)).to.be.true;
+
+
+    // expect log
+    const transaction = await provider.connection.getParsedTransaction(txId as string, {
+      commitment: "confirmed",
+    });
+    const eventParser = new EventParser(
+      program.programId,
+      new BorshCoder(program.idl)
+    );
+    const [event] = eventParser.parseLogs(transaction.meta.logMessages);
+
+    // Expect emitted logs
+    expect(event.name).eq('PocketCreated');
+    expect(
+      (event.data as any).owner.equals(owner.publicKey)
+    ).equals(true);
+    expect(
+      (event.data as any).pocketAddress.equals(pocketAccount)
+    ).equals(true);
+    expect(
+      (event.data as any).marketKey.equals(pocketData.marketKey)
+    ).equals(true);
+    expect(
+      (event.data as any).name === pocketData.name
+    ).equals(true);
   });
 
   it("[create_token_vault] should: pocket owner can create token vault successfully", async () => {
@@ -106,7 +134,7 @@ describe("pocket", async () => {
     ];
 
     const tx = new Transaction().add(...inx);
-    await provider.sendAndConfirm(tx, [owner]).catch((e) => console.log(e));
+    const txId = await provider.sendAndConfirm(tx, [owner], {commitment: "confirmed"}).catch((e) => console.log(e));
 
     expect(!!(await provider.connection.getAccountInfo(targetMintVaultAccount)))
       .to.be.true;
@@ -123,12 +151,37 @@ describe("pocket", async () => {
         await getAccount(provider.connection, targetMintVaultAccount)
       ).owner.equals(pocketAccount)
     ).to.be.true;
+
+    // expect log
+    const transaction = await provider.connection.getParsedTransaction(txId as string, {
+      commitment: "confirmed",
+    });
+    const eventParser = new EventParser(
+      program.programId,
+      new BorshCoder(program.idl)
+    );
+    const [event] = eventParser.parseLogs(transaction.meta.logMessages);
+
+    // Expect emitted logs
+    expect(event.name).eq('VaultCreated');
+    expect(
+      (event.data as any).actor.equals(owner.publicKey)
+    ).equals(true);
+    expect(
+      (event.data as any).mintAccount.equals(baseMintAccount)
+    ).equals(true);
+    expect(
+      (event.data as any).authority.equals(pocketAccount)
+    ).equals(true);
+    expect(
+      (event.data as any).associatedAccount.equals(baseMintVaultAccount)
+    ).equals(true);
   });
 
   it("[pause_pocket] should: owner should pause pocket successfully", async () => {
-    const { program, pocketAccount, owner } = fixtures;
+    const { provider, program, pocketAccount, owner } = fixtures;
 
-    await program.methods
+    const txId = await program.methods
       .updatePocket({
         status: { paused: {} },
       })
@@ -137,12 +190,34 @@ describe("pocket", async () => {
         pocket: pocketAccount,
       })
       .signers([owner])
-      .rpc()
+      .rpc({commitment: "confirmed"})
       .catch((e) => console.log(e));
 
     const pocket = await program.account.pocket.fetch(pocketAccount);
 
     expect(!!pocket.status.paused).to.be.true;
+
+    // expect log
+    const transaction = await provider.connection.getParsedTransaction(txId as string, {
+      commitment: "confirmed",
+    });
+    const eventParser = new EventParser(
+      program.programId,
+      new BorshCoder(program.idl)
+    );
+    const [event] = eventParser.parseLogs(transaction.meta.logMessages);
+
+    // Expect emitted logs
+    expect(event.name).eq('PocketUpdated');
+    expect(
+      (event.data as any).owner.equals(owner.publicKey)
+    ).equals(true);
+    expect(
+      (event.data as any).pocketAddress.equals(pocketAccount)
+    ).equals(true);
+    expect(
+      !!(event.data as any).status.paused
+    ).equals(true);
   });
 
   it("[pause_pocket] should: owner should not pause pocket that was already paused", async () => {
