@@ -9,7 +9,7 @@ use anchor_spl::{
         },
         NewOrderV3,
     },
-    token::{self, Token, TokenAccount, Transfer},
+    token::{self, Token, TokenAccount, Transfer, Mint},
 };
 
 use std::num::NonZeroU64;

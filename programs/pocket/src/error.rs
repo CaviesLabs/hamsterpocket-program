@@ -16,6 +16,9 @@ pub enum PocketError {
     #[msg("Only Platform operator")]
     OnlyOperator,
 
+    #[msg("Only Platform Administrator")]
+    OnlyAdministrator,
+
     #[msg("Only Owner")]
     OnlyOwner,
 
