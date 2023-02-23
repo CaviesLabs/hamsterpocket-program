@@ -25,7 +25,6 @@ describe("pocket", async () => {
     } = fixtures;
 
     const pocketData = {
-      marketKey: Keypair.generate().publicKey,
       id: pocketId,
       targetTokenAddress: targetMintAccount,
       baseTokenAddress: baseMintAccount,
@@ -57,7 +56,6 @@ describe("pocket", async () => {
     expect(pocket.owner.equals(owner.publicKey)).to.be.true;
     expect(pocket.id === pocketData.id).to.be.true;
     expect(pocket.startAt.eq(pocketData.startAt)).to.be.true;
-    expect(pocket.marketKey.equals(pocketData.marketKey)).to.be.true;
     expect(pocket.targetTokenMintAddress.equals(pocketData.targetTokenAddress))
       .to.be.true;
     expect(pocket.baseTokenMintAddress.equals(pocketData.baseTokenAddress)).to
@@ -86,9 +84,6 @@ describe("pocket", async () => {
     ).equals(true);
     expect(
       (event.data as any).pocketAddress.equals(pocketAccount)
-    ).equals(true);
-    expect(
-      (event.data as any).marketKey.equals(pocketData.marketKey)
     ).equals(true);
     expect(
       (event.data as any).name === pocketData.name

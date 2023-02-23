@@ -85,7 +85,6 @@ impl<'info> CreatePocketContext<'info> {
         self.pocket.buy_condition = params.buy_condition;
         self.pocket.stop_conditions = params.stop_conditions;
         self.pocket.frequency = params.frequency;
-        self.pocket.market_key = params.market_key;
 
         // assign default values
         self.pocket.bump = pocket_bump;
@@ -100,7 +99,6 @@ impl<'info> CreatePocketContext<'info> {
         pocket_emit!(
           PocketCreated {
                 pocket_address: pocket.key().clone(),
-                market_key: pocket.market_key.clone(),
                 owner: pocket.owner.clone(),
                 name: pocket.name.clone()
             }

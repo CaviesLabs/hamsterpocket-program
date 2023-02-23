@@ -26,7 +26,6 @@ describe("assets", async () => {
     } = fixtures;
 
     const pocketData = {
-      marketKey: Keypair.generate().publicKey,
       id: pocketId,
       targetTokenAddress: targetMintAccount,
       baseTokenAddress: baseMintAccount,

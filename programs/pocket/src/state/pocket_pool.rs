@@ -187,9 +187,6 @@ pub struct Pocket {
     // Define target token
     pub target_token_mint_address: Pubkey,
 
-    // Define the market key
-    pub market_key: Pubkey,
-
     // Here we define the batch volume, the amount swap every batches
     pub batch_volume: u64,
 
@@ -260,7 +257,6 @@ impl Pocket {
         assert_ne!(pocket.id, String::default(), "Pocket Id is not valid");
 
         assert_ne!(pocket.owner, Pubkey::default(), "Owner is not valid");
-        assert_ne!(pocket.market_key, Pubkey::default(), "Not valid pubkey");
         assert_ne!(pocket.base_token_mint_address, Pubkey::default(), "Not valid pubkey");
         assert_ne!(pocket.target_token_mint_address, Pubkey::default(), "Not valid pubkey");
 

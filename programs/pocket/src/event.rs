@@ -38,8 +38,6 @@ pub struct PocketCreated {
     pub owner: Pubkey,
     #[index]
     pub pocket_address: Pubkey,
-    #[index]
-    pub market_key: Pubkey,
     pub name: String,
 }
 
