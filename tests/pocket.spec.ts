@@ -26,6 +26,7 @@ describe("pocket", async () => {
 
     const pocketData = {
       id: pocketId,
+      side: {buy: {}},
       targetTokenAddress: targetMintAccount,
       baseTokenAddress: baseMintAccount,
       stopConditions: [],

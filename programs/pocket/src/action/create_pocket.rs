@@ -31,6 +31,9 @@ pub struct CreatePocketParams {
 
     // Define the frequency
     pub frequency: DateDuration,
+
+    // Define the trade side
+    pub side: TradeSide
 }
 
 #[derive(Accounts)]
@@ -85,6 +88,7 @@ impl<'info> CreatePocketContext<'info> {
         self.pocket.buy_condition = params.buy_condition;
         self.pocket.stop_conditions = params.stop_conditions;
         self.pocket.frequency = params.frequency;
+        self.pocket.side = params.side;
 
         // assign default values
         self.pocket.bump = pocket_bump;

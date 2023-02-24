@@ -145,6 +145,16 @@ pub struct DateDuration {
     hours: u64,
 }
 
+
+
+#[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
+pub enum TradeSide {
+    #[default]
+    Buy,
+    Sell
+}
+
+
 // ================ Pocket Option Interface ================ //
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
 pub enum PocketStatus {
@@ -192,6 +202,9 @@ pub struct Pocket {
 
     // Define the activated time the pool has settled
     pub start_at: u64,
+
+    // Define the trade side whether it is sell or buy
+    pub side: TradeSide,
 
     // Define the buy condition
     pub buy_condition: Option<BuyCondition>,

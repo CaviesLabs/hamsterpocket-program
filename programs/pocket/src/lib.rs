@@ -1,5 +1,9 @@
+use std::num::NonZeroU64;
+
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{system_program, sysvar};
+use anchor_lang::__private::bytemuck::Contiguous;
+
 use anchor_spl::{
     dex::{
         new_order_v3, settle_funds, SettleFunds,
@@ -12,7 +16,6 @@ use anchor_spl::{
     token::{self, Token, TokenAccount, Transfer, Mint},
 };
 
-use std::num::NonZeroU64;
 pub mod action;
 pub mod error;
 pub mod event;

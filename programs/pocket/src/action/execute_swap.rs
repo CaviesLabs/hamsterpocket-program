@@ -1,4 +1,3 @@
-use anchor_lang::__private::bytemuck::Contiguous;
 use crate::*;
 
 #[derive(Accounts)]
