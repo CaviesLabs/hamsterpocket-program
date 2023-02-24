@@ -53,6 +53,8 @@ describe("pocket", async () => {
 
     // @ts-ignore
     expect(!!pocket.status.active).to.be.true;
+    // @ts-ignore
+    expect(!!pocket.side.buy).to.be.true;
     expect(pocket.name === pocketData.name).to.be.true;
     expect(pocket.owner.equals(owner.publicKey)).to.be.true;
     expect(pocket.id === pocketData.id).to.be.true;
