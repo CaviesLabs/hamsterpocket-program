@@ -59,6 +59,7 @@ describe("assets", async () => {
     ];
 
     await program.methods
+      // @ts-ignore
       .createPocket(pocketData)
       .accounts({
         pocket: pocketAccount,
