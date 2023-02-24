@@ -92,6 +92,12 @@ impl<'info> ExecuteSwapContext<'info> {
         let pocket = self.pocket.clone();
         let dex_program = self.dex_program.clone();
 
+        let mut side = Side::Bid;
+
+        if pocket.side == TradeSide::Buy {
+            side = Side::Ask;
+        }
+
         new_order_v3(
             CpiContext::new_with_signer(
                 dex_program.to_account_info(),
@@ -115,7 +121,7 @@ impl<'info> ExecuteSwapContext<'info> {
                     &[pocket.bump],
                 ]],
             ),
-            Side::Bid,
+            side,
             NonZeroU64::new(NonZeroU64::MAX_VALUE).unwrap(),
             NonZeroU64::new(NonZeroU64::MAX_VALUE).unwrap(),
             NonZeroU64::new(pocket.batch_volume).unwrap(),
