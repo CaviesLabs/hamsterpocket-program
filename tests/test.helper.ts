@@ -4,19 +4,24 @@ import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import {
   createAssociatedTokenAccount,
   createMint,
-  mintTo,
+  mintTo
 } from "@solana/spl-token";
 import { AnchorProvider } from "@project-serum/anchor/dist/cjs/provider";
 
 import { IDL } from "../target/types/pocket";
-export const getFixtures = async (provider: AnchorProvider) => {
+
+export const getFixtures = async (provider: AnchorProvider, opt?: {
+  baseMint: PublicKey,
+  quoteMint: PublicKey,
+  pocketId?: string,
+}) => {
   // Configure the client to use the local cluster.
   anchor.setProvider(provider);
 
   const program = new anchor.Program(IDL, process.env.PROGRAM_ID);
   const deployer = provider.wallet as anchor.Wallet;
 
-  const pocketId = Keypair.generate().publicKey.toString().slice(0, 24);
+  const pocketId = (opt && !!opt.pocketId) ? opt.pocketId : Keypair.generate().publicKey.toString().slice(0, 24);
 
   // find the pocket account
   const [pocketRegistry] = PublicKey.findProgramAddressSync(
@@ -28,27 +33,36 @@ export const getFixtures = async (provider: AnchorProvider) => {
   const [pocketAccount] = PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("SEED::POCKET::POCKET_SEED"),
-      anchor.utils.bytes.utf8.encode(pocketId),
+      anchor.utils.bytes.utf8.encode(pocketId)
     ],
     program.programId
   );
 
   let owner: Keypair = Keypair.generate();
   let nonOwner: Keypair = Keypair.generate();
+  let operator: Keypair = Keypair.generate();
 
-  // Funding signer accounts
-  await provider.connection.requestAirdrop(
-    owner.publicKey,
-    LAMPORTS_PER_SOL * 1
-  );
+  try {
+    // Funding signer accounts
+    await provider.connection.requestAirdrop(
+      operator.publicKey,
+      LAMPORTS_PER_SOL * 2
+    );
 
-  await provider.connection.requestAirdrop(
-    nonOwner.publicKey,
-    LAMPORTS_PER_SOL * 1
-  );
+    // Funding signer accounts
+    await provider.connection.requestAirdrop(
+      owner.publicKey,
+      LAMPORTS_PER_SOL * 2
+    );
+
+    await provider.connection.requestAirdrop(
+      nonOwner.publicKey,
+      LAMPORTS_PER_SOL * 2
+    );
+  } catch {}
 
   // Create mint token and funding token
-  const baseMintAccount = await createMint(
+  const baseMintAccount = opt ? opt.baseMint : await createMint(
     provider.connection,
     deployer.payer,
     deployer.publicKey,
@@ -72,7 +86,7 @@ export const getFixtures = async (provider: AnchorProvider) => {
     nonOwner.publicKey
   );
 
-  const targetMintAccount = await createMint(
+  const targetMintAccount = opt ? opt.quoteMint : await createMint(
     provider.connection,
     deployer.payer,
     deployer.publicKey,
@@ -96,31 +110,34 @@ export const getFixtures = async (provider: AnchorProvider) => {
     nonOwner.publicKey
   );
 
-  // funding token
-  await mintTo(
-    provider.connection,
-    deployer.payer,
-    baseMintAccount,
-    ownerBaseTokenAccount,
-    deployer.publicKey,
-    LAMPORTS_PER_SOL * 100
-  );
+  // wont mint if use existed mints
+  if (!opt) {
+    // funding token
+    await mintTo(
+      provider.connection,
+      deployer.payer,
+      baseMintAccount,
+      ownerBaseTokenAccount,
+      deployer.publicKey,
+      LAMPORTS_PER_SOL * 100
+    );
 
-  // funding token
-  await mintTo(
-    provider.connection,
-    deployer.payer,
-    targetMintAccount,
-    ownerTargetTokenAccount,
-    deployer.publicKey,
-    LAMPORTS_PER_SOL * 100
-  );
+    // funding token
+    await mintTo(
+      provider.connection,
+      deployer.payer,
+      targetMintAccount,
+      ownerTargetTokenAccount,
+      deployer.publicKey,
+      LAMPORTS_PER_SOL * 100
+    );
+  }
 
   const [baseMintVaultAccount] = PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("SEED::POCKET::TOKEN_VAULT_SEED"),
       pocketAccount.toBytes(),
-      baseMintAccount.toBytes(),
+      baseMintAccount.toBytes()
     ],
     program.programId
   );
@@ -129,7 +146,7 @@ export const getFixtures = async (provider: AnchorProvider) => {
     [
       anchor.utils.bytes.utf8.encode("SEED::POCKET::TOKEN_VAULT_SEED"),
       pocketAccount.toBytes(),
-      targetMintAccount.toBytes(),
+      targetMintAccount.toBytes()
     ],
     program.programId
   );
@@ -141,6 +158,7 @@ export const getFixtures = async (provider: AnchorProvider) => {
     pocketRegistry,
     pocketAccount,
     pocketId,
+    operator,
     owner,
     ownerBaseTokenAccount,
     ownerTargetTokenAccount,
@@ -150,6 +168,6 @@ export const getFixtures = async (provider: AnchorProvider) => {
     baseMintAccount,
     targetMintAccount,
     baseMintVaultAccount,
-    targetMintVaultAccount,
+    targetMintVaultAccount
   };
 };

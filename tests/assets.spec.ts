@@ -1,7 +1,9 @@
 import * as anchor from "@project-serum/anchor";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey, Connection } from "@solana/web3.js";
 import { expect } from "chai";
 import { BorshCoder, EventParser } from "@project-serum/anchor";
+import { Market } from '@openbook-dex/openbook';
+
 
 import { getFixtures } from "./test.helper";
 
@@ -210,28 +212,6 @@ describe("assets", async () => {
     expect(
       (event.data as any).targetTokenAmount.eq(new anchor.BN(0))
     ).equals(true);
-  })
-
-
-  it("[swap] should: pocket operator can trigger swap", async () => {
-    // market on devnet
-    // https://www.serumexplorer.xyz/market/FdDgZX4vCyKWBPYn8824re6tAsq5ahTWtYkHiGugwox4?network=devnet&address=DEX2Dj46YeRkFnwGpBewZXYuNjm6XzQDoAg9W7NvLvuV
-    // // Swaps two tokens on a single A/B market, where A is the base currency
-    //     /// and B is the quote currency. This is just a direct IOC trade that
-    //     /// instantly settles.
-    //     ///
-    //     /// When side is "bid", then swaps B for A. When side is "ask", then swaps
-    //     /// A for B.
-    //     ///
-    //     /// Arguments:
-    //     ///
-    //     /// * `side`              - The direction to swap.
-    //     /// * `amount`            - The amount to swap *from*
-    //     /// * `min_exchange_rate` - The exchange rate to use when determining
-    //     ///    whether the transaction should abort.
-
-
-
   })
 
 });

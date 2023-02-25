@@ -8,9 +8,6 @@ pub struct CreatePocketParams {
     // Define the name of the pool
     pub name: String,
 
-    // Define the market key
-    pub market_key: Pubkey,
-
     // Define base token
     pub base_token_address: Pubkey,
 

@@ -12,10 +12,6 @@ pub struct ExecuteSwapContext<'info> {
     )]
     pub pocket: Account<'info, Pocket>,
 
-    #[account(mut)]
-    /// CHECK: the signer token account can be verified later
-    pub signer_token_account: AccountInfo<'info>,
-
     #[account(
         seeds = [PLATFORM_SEED],
         bump = pocket_registry.bump,
@@ -45,10 +41,8 @@ pub struct ExecuteSwapContext<'info> {
     pub market_asks: AccountInfo<'info>,
     /// CHECK: skip check
     pub open_orders: AccountInfo<'info>,
-
-    // System account
-    #[account(address = anchor_spl::dex::ID)]
-    pub dex_program: Program<'info, OpenBookDex>,
+    /// CHECK: skip check
+    pub dex_program: AccountInfo<'info>,
 
     #[account(address = system_program::ID)]
     pub system_program: Program<'info, System>,
@@ -126,7 +120,7 @@ impl<'info> ExecuteSwapContext<'info> {
             NonZeroU64::new(NonZeroU64::MAX_VALUE).unwrap(),
             NonZeroU64::new(pocket.batch_volume).unwrap(),
             SelfTradeBehavior::DecrementTake,
-            OrderType::Limit,
+            OrderType::ImmediateOrCancel,
             u64::try_from_slice(&pocket.key().to_bytes()[0..8]).unwrap(),
             std::u16::MAX,
         ).unwrap();
