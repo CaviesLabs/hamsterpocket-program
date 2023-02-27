@@ -79,23 +79,6 @@ const getFixtures = async (provider: AnchorProvider, opt?: {
 };
 
 type Fixtures = Awaited<ReturnType<typeof getFixtures>>;
-//
-// // https://github.com/blockworks-foundation/mango-client-v3/blob/main/src/ids.json#L618
-// // mango market
-// const raydiumMarket = {
-//   "programId": "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY",
-//   "baseMint": "So11111111111111111111111111111111111111112",
-//   "quoteMint": "8FRFC6MoGGkMFQwngccyu69VnYbzykGeez7ignHVAFSN",
-//   "name": "SOL/USDC",
-//   "publicKey": "5xWpt56U1NCuHoAEtpLeUrQcxDkEpNfScjfLFaRzLPgR",
-//   "baseSymbol": "SOL",
-//   "baseDecimals": 9,
-//   "quoteDecimals": 6,
-//   "marketIndex": 3,
-//   "bidsKey": "8ezpneRznTJNZWFSLeQvtPCagpsUVWA7djLSzqp3Hx4p",
-//   "asksKey": "8gJhxSwbLJkDQbqgzbJ6mDvJYnEVWB6NHWEN9oZZkwz7",
-//   "eventsKey": "48be6VKEq86awgUjfvbKDmEzXr4WNR7hzDxfF6ZPptmd"
-// };
 
 // https://api.raydium.io/v2/sdk/liquidity/mainnet.json
 // Raydium market
@@ -141,8 +124,10 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     pocketRegistry,
     program,
     deployer,
-    pocketId
   } = fixtures;
+
+  const pocket = await program.account.pocket.fetch(pocketAccount);
+  console.log({ pocket });
 
   const operator = deployer.publicKey;
 
@@ -150,15 +135,6 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
   let programAddress = new PublicKey(marketSOLUSDT.marketProgramId);
 
   let market = await Market.load(provider.connection, marketAddress, {}, programAddress);
-  //
-  // const [desiredOpenOrderAccount] = PublicKey.findProgramAddressSync(
-  //   [
-  //     deployer.publicKey.toBytes(),
-  //     marketAddress.toBytes(),
-  //     anchor.utils.bytes.utf8.encode(pocketId)
-  //   ],
-  //   program.programId
-  // );
 
   const desiredOpenOrderAccount = await PublicKey.createWithSeed(
       deployer.publicKey,
@@ -184,17 +160,6 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     );
   }
 
-  // let market = &mut ctx.remaining_accounts.get(0).unwrap();
-  //     let event_queue = &mut ctx.remaining_accounts.get(1).unwrap();
-  //     let request_queue = &mut ctx.remaining_accounts.get(2).unwrap();
-  //     let market_bids = &mut ctx.remaining_accounts.get(3).unwrap();
-  //     let market_asks = &mut ctx.remaining_accounts.get(4).unwrap();
-  //     let coin_vault = &mut ctx.remaining_accounts.get(5).unwrap();
-  //     let pc_vault = &mut ctx.remaining_accounts.get(6).unwrap();
-  //     let market_authority = &mut ctx.remaining_accounts.get(7).unwrap();
-  //     let open_orders = &mut ctx.remaining_accounts.get(8).unwrap();
-  //     let dex_program = &mut ctx.remaining_accounts.get(9).unwrap();
-
   const txId = await program.methods.executeSwap().accounts({
     // pocket accounts
     signer: operator,
@@ -204,32 +169,33 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     pocketTargetTokenVault: targetMintVaultAccount,
   }).preInstructions(initInx).remainingAccounts([
     // serum dex accounts
-    market.publicKey,
-    market.decoded.eventQueue,
-    market.decoded.requestQueue,
-    market.decoded.bids,
-    market.decoded.asks,
-    market.decoded.baseVault,
-    market.decoded.quoteVault,
-    new PublicKey(marketSOLUSDT.marketAuthority),
-    desiredOpenOrderAccount,
-    programAddress
-  ]).signers([deployer.payer]).simulate({ commitment: "confirmed" }).catch(e => console.log(e));
+    {pubkey: market.publicKey, isSigner: false, isWritable: true},
+    {pubkey: market.decoded.eventQueue, isSigner: false, isWritable: true},
+    {pubkey: market.decoded.requestQueue, isSigner: false, isWritable: true},
+    {pubkey: market.decoded.bids, isSigner: false, isWritable: true},
+    {pubkey: market.decoded.asks, isSigner: false, isWritable: true},
+    {pubkey: market.decoded.baseVault, isSigner: false, isWritable: true},
+    {pubkey: market.decoded.quoteVault, isSigner: false, isWritable: true},
+    {pubkey: new PublicKey(marketSOLUSDT.marketAuthority), isSigner: false, isWritable: false},
+    {pubkey: desiredOpenOrderAccount, isSigner: false, isWritable: true},
+    {pubkey: programAddress, isSigner: false, isWritable: false},
+  ]).signers([deployer.payer])
+    .rpc({ commitment: "confirmed" })
+    .catch(e => console.log(e));
 
-  //
-  // // expect log
-  // const transaction = await provider.connection.getParsedTransaction(txId as string, {
-  //   commitment: "confirmed"
-  // });
-  //
-  // const eventParser = new EventParser(
-  //   program.programId,
-  //   new BorshCoder(program.idl)
-  // );
-  //
-  // const [event] = eventParser.parseLogs(transaction.meta.logMessages);
-  //
-  // console.log({ event });
+  // expect log
+  const transaction = await provider.connection.getParsedTransaction(txId as string, {
+    commitment: "confirmed"
+  });
+
+  const eventParser = new EventParser(
+    program.programId,
+    new BorshCoder(program.idl)
+  );
+
+  const [event] = eventParser.parseLogs(transaction.meta.logMessages);
+
+  console.log({ event });
 };
 
 const initializeAccount = async (provider: AnchorProvider, fixtures: Fixtures) => {
