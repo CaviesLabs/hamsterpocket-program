@@ -8,7 +8,6 @@ pub mod update_pocket;
 pub mod execute_swap;
 pub mod create_token_vault;
 pub mod update_pocket_registry;
-pub mod initialize_pocket_trade_registry;
 
 pub use initialize_pocket_program::*;
 pub use create_pocket::*;
@@ -18,4 +17,3 @@ pub use update_pocket::*;
 pub use execute_swap::*;
 pub use create_token_vault::*;
 pub use update_pocket_registry::*;
-pub use initialize_pocket_trade_registry::*;

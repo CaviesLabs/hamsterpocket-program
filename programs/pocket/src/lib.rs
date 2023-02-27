@@ -6,14 +6,12 @@ use anchor_lang::__private::bytemuck::Contiguous;
 
 use anchor_spl::{
     dex::{
-        new_order_v3, settle_funds, init_open_orders, SettleFunds,
+        new_order_v3, settle_funds, SettleFunds,
         serum_dex::{
-            self,
             instruction::SelfTradeBehavior,
             matching::{OrderType, Side},
         },
         NewOrderV3,
-        InitOpenOrders,
     },
     token::{self, Token, TokenAccount, Transfer, Mint},
 };
@@ -122,21 +120,11 @@ pub mod pocket {
         Ok(())
     }
 
-    pub fn initialize_pocket_dex_registry(
-        ctx: Context<InitializePocketTradeRegistryContext>,
+    pub fn execute_swap<'info>(
+        ctx: Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>
     ) -> Result<()> {
         // process
-        ctx.accounts.execute().unwrap();
-
-        // Program result should be ok.
-        Ok(())
-    }
-
-    pub fn execute_swap(
-        ctx: Context<ExecuteSwapContext>,
-    ) -> Result<()> {
-        // process
-        ctx.accounts.execute().unwrap();
+        handle_execute_swap(&ctx).unwrap();
 
         // Program result should be ok.
         Ok(())

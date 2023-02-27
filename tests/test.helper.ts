@@ -2,26 +2,21 @@ import * as anchor from "@project-serum/anchor";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 import {
-  createAssociatedTokenAccount,
-  createMint,
+  createMint, getOrCreateAssociatedTokenAccount,
   mintTo
 } from "@solana/spl-token";
 import { AnchorProvider } from "@project-serum/anchor/dist/cjs/provider";
 
 import { IDL } from "../target/types/pocket";
 
-export const getFixtures = async (provider: AnchorProvider, opt?: {
-  baseMint: PublicKey,
-  quoteMint: PublicKey,
-  pocketId?: string,
-}) => {
+export const getFixtures = async (provider: AnchorProvider) => {
   // Configure the client to use the local cluster.
   anchor.setProvider(provider);
 
   const program = new anchor.Program(IDL, process.env.PROGRAM_ID);
   const deployer = provider.wallet as anchor.Wallet;
 
-  const pocketId = (opt && !!opt.pocketId) ? opt.pocketId : Keypair.generate().publicKey.toString().slice(0, 24);
+  const pocketId = Keypair.generate().publicKey.toString().slice(0, 24);
 
   // find the pocket account
   const [pocketRegistry] = PublicKey.findProgramAddressSync(
@@ -38,31 +33,29 @@ export const getFixtures = async (provider: AnchorProvider, opt?: {
     program.programId
   );
 
-  let owner: Keypair = Keypair.generate();
   let nonOwner: Keypair = Keypair.generate();
+  let owner: Keypair = Keypair.generate();
   let operator: Keypair = Keypair.generate();
 
-  try {
-    // Funding signer accounts
-    await provider.connection.requestAirdrop(
-      operator.publicKey,
-      LAMPORTS_PER_SOL * 2
-    );
+  // Funding signer accounts
+  await provider.connection.requestAirdrop(
+    operator.publicKey,
+    LAMPORTS_PER_SOL * 2
+  );
 
-    // Funding signer accounts
-    await provider.connection.requestAirdrop(
-      owner.publicKey,
-      LAMPORTS_PER_SOL * 2
-    );
+  // Funding signer accounts
+  await provider.connection.requestAirdrop(
+    owner.publicKey,
+    LAMPORTS_PER_SOL * 2
+  );
 
-    await provider.connection.requestAirdrop(
-      nonOwner.publicKey,
-      LAMPORTS_PER_SOL * 2
-    );
-  } catch {}
+  await provider.connection.requestAirdrop(
+    nonOwner.publicKey,
+    LAMPORTS_PER_SOL * 2
+  );
 
   // Create mint token and funding token
-  const baseMintAccount = opt ? opt.baseMint : await createMint(
+  const baseMintAccount = await createMint(
     provider.connection,
     deployer.payer,
     deployer.publicKey,
@@ -71,7 +64,7 @@ export const getFixtures = async (provider: AnchorProvider, opt?: {
   );
 
   // create associated token account
-  const ownerBaseTokenAccount = await createAssociatedTokenAccount(
+  const ownerBaseTokenAccount = await getOrCreateAssociatedTokenAccount(
     provider.connection,
     deployer.payer,
     baseMintAccount,
@@ -79,14 +72,14 @@ export const getFixtures = async (provider: AnchorProvider, opt?: {
   );
 
   // create associated token account
-  const nonOwnerBaseTokenAccount = await createAssociatedTokenAccount(
+  const nonOwnerBaseTokenAccount = await getOrCreateAssociatedTokenAccount(
     provider.connection,
     deployer.payer,
     baseMintAccount,
     nonOwner.publicKey
   );
 
-  const targetMintAccount = opt ? opt.quoteMint : await createMint(
+  const targetMintAccount = await createMint(
     provider.connection,
     deployer.payer,
     deployer.publicKey,
@@ -95,7 +88,7 @@ export const getFixtures = async (provider: AnchorProvider, opt?: {
   );
 
   // create associated token account
-  const ownerTargetTokenAccount = await createAssociatedTokenAccount(
+  const ownerTargetTokenAccount = await getOrCreateAssociatedTokenAccount(
     provider.connection,
     deployer.payer,
     targetMintAccount,
@@ -103,7 +96,7 @@ export const getFixtures = async (provider: AnchorProvider, opt?: {
   );
 
   // create associated token account
-  const nonOwnerTargetTokenAccount = await createAssociatedTokenAccount(
+  const nonOwnerTargetTokenAccount = await getOrCreateAssociatedTokenAccount(
     provider.connection,
     deployer.payer,
     targetMintAccount,
@@ -111,27 +104,25 @@ export const getFixtures = async (provider: AnchorProvider, opt?: {
   );
 
   // wont mint if use existed mints
-  if (!opt) {
-    // funding token
-    await mintTo(
-      provider.connection,
-      deployer.payer,
-      baseMintAccount,
-      ownerBaseTokenAccount,
-      deployer.publicKey,
-      LAMPORTS_PER_SOL * 100
-    );
+  // funding token
+  await mintTo(
+    provider.connection,
+    deployer.payer,
+    baseMintAccount,
+    ownerBaseTokenAccount.address,
+    deployer.publicKey,
+    LAMPORTS_PER_SOL * 100
+  );
 
-    // funding token
-    await mintTo(
-      provider.connection,
-      deployer.payer,
-      targetMintAccount,
-      ownerTargetTokenAccount,
-      deployer.publicKey,
-      LAMPORTS_PER_SOL * 100
-    );
-  }
+  // funding token
+  await mintTo(
+    provider.connection,
+    deployer.payer,
+    targetMintAccount,
+    ownerTargetTokenAccount.address,
+    deployer.publicKey,
+    LAMPORTS_PER_SOL * 100
+  );
 
   const [baseMintVaultAccount] = PublicKey.findProgramAddressSync(
     [

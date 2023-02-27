@@ -99,42 +99,64 @@ impl BuyCondition {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq)]
 pub enum StopCondition {
-    EndTime {
+    EndTimeReach {
+        is_primary: bool,
         value: u64
     },
 
-    BaseTokenReach {
+    BaseTokenAmountReach {
+        is_primary: bool,
         value: u64
     },
 
-    TargetTokenReach {
+    TargetTokenAmountReach {
+        is_primary: bool,
         value: u64
     },
 
     BatchAmountReach {
+        is_primary: bool,
         value: u64
     },
 }
 
 impl StopCondition {
     pub fn default() -> StopCondition {
-        StopCondition::EndTime { value: 0 }
+        StopCondition::EndTimeReach { is_primary: true, value: 0 }
     }
 
     // Check whether the stop condition is valid
     pub fn is_valid(stop_condition: &StopCondition) -> bool {
         return match stop_condition {
-            StopCondition::EndTime { value } => {
+            StopCondition::EndTimeReach { value, .. } => {
                 value.clone() > 0
             },
-            StopCondition::BaseTokenReach { value } => {
+            StopCondition::BaseTokenAmountReach { value,  ..  } => {
                 value.clone() > 0
             },
-            StopCondition::TargetTokenReach { value } => {
+            StopCondition::TargetTokenAmountReach { value,  ..  } => {
                 value.clone() > 0
             },
-            StopCondition::BatchAmountReach { value } => {
+            StopCondition::BatchAmountReach { value,  ..  } => {
                 value.clone() > 0
+            }
+        }
+    }
+
+    // Check whether the stop condition is primary
+    pub fn is_primary(stop_condition: &StopCondition) -> bool {
+        return match stop_condition {
+            StopCondition::EndTimeReach { is_primary, .. } => {
+                *is_primary == true
+            },
+            StopCondition::BaseTokenAmountReach { is_primary,  ..  } => {
+                *is_primary == true
+            },
+            StopCondition::TargetTokenAmountReach { is_primary,  ..  } => {
+                *is_primary == true
+            },
+            StopCondition::BatchAmountReach { is_primary,  ..  } => {
+                *is_primary == true
             }
         }
     }
@@ -145,8 +167,6 @@ pub struct DateDuration {
     hours: u64,
 }
 
-
-
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
 pub enum TradeSide {
     #[default]
@@ -154,6 +174,14 @@ pub enum TradeSide {
     Sell
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
+pub enum MainProgressBy {
+    #[default]
+    EndTimeReach,
+    BaseTokenAmountReach,
+    TargetTokenAmountReach,
+    BatchAmountReach
+}
 
 // ================ Pocket Option Interface ================ //
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
@@ -280,9 +308,17 @@ impl Pocket {
         if pocket.buy_condition.unwrap_or(BuyCondition::default()) != BuyCondition::default() {
             assert_eq!(BuyCondition::is_valid(&pocket.buy_condition.unwrap()), true, "Not valid buy condition");
         }
+
+        let mut primary_count = 0;
+
         for x in pocket.stop_conditions {
             assert_eq!(StopCondition::is_valid(&x), true, "Not valid stop condition");
+            if StopCondition::is_primary(&x) {
+                primary_count = primary_count + 1;
+            }
         }
+
+        assert_eq!(primary_count <= 1, true, "Can just set 1 primary condition");
 
         Ok(())
     }
