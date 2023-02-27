@@ -8,6 +8,7 @@ use anchor_spl::{
     dex::{
         new_order_v3, settle_funds, init_open_orders, SettleFunds,
         serum_dex::{
+            self,
             instruction::SelfTradeBehavior,
             matching::{OrderType, Side},
         },

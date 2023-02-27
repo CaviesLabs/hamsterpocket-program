@@ -20,7 +20,7 @@ import {
 
 type Fixtures = Awaited<ReturnType<typeof getFixtures>>;
 
-
+// https://github.com/blockworks-foundation/mango-client-v3/blob/main/src/ids.json#L618
 // mango market
 const mangoMarket = {
   "programId": "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY",
@@ -49,7 +49,8 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     targetMintVaultAccount,
     pocketRegistry,
     program,
-    deployer
+    deployer,
+    pocketId
   } = fixtures;
 
   const operator = Keypair.fromSecretKey(
@@ -63,7 +64,13 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
 
   let market = await Market.load(provider.connection, marketAddress, {}, programAddress);
 
-  const desiredOpenOrderAccount = Keypair.generate();
+  const [desiredOpenOrderAccount] = PublicKey.findProgramAddressSync(
+    [
+      new PublicKey(mangoMarket.publicKey).toBytes(),
+      anchor.utils.bytes.utf8.encode(pocketId)
+    ],
+    program.programId
+  );
 
   const openOrders = await market.loadOrdersForOwner(provider.connection, pocketAccount);
   let initInx = [];
@@ -75,8 +82,8 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
         pocket: pocketAccount,
         pocketRegistry,
         market: market.publicKey,
-        openOrders: desiredOpenOrderAccount.publicKey,
-        dexProgram: new PublicKey(mangoMarket.programId)
+        openOrders: desiredOpenOrderAccount,
+        dexProgram: new PublicKey("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
       }).instruction()
     )
   }
@@ -96,8 +103,8 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     pcVault: market.decoded.quoteVault,
     marketBids: market.decoded.bids,
     marketAsks: market.decoded.asks,
-    openOrders: desiredOpenOrderAccount.publicKey,
-    dexProgram: new PublicKey(mangoMarket.programId)
+    openOrders: desiredOpenOrderAccount,
+    dexProgram: new PublicKey("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
   }).preInstructions(initInx).signers([deployer.payer]).rpc({ commitment: "confirmed" }).catch(e => console.log(e));
 
   // expect log

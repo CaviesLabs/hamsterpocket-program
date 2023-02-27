@@ -34,8 +34,8 @@ pub struct InitializePocketTradeRegistryContext<'info> {
     )]
     pub open_orders: AccountInfo<'info>,
 
-    /// CHECK: skip check
-    pub dex_program: AccountInfo<'info>,
+    #[account(address = anchor_spl::dex::ID)]
+    pub dex_program: Program<'info, OpenBookDex>,
 
     #[account(address = system_program::ID)]
     pub system_program: Program<'info, System>,
