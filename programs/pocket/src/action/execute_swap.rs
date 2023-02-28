@@ -62,7 +62,7 @@ fn make_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>)
 
     let mut side = Side::Bid;
 
-    if pocket.side == TradeSide::Buy {
+    if pocket.side == TradeSide::Sell {
         side = Side::Ask;
     }
 
@@ -116,10 +116,10 @@ fn make_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>)
             SettleFunds {
                 market: market.to_account_info(),
                 open_orders: open_orders.to_account_info(),
-                open_orders_authority: ctx.accounts.pocket.to_account_info(),
                 coin_vault: coin_vault.to_account_info(),
                 pc_vault: pc_vault.to_account_info(),
                 vault_signer: market_authority.to_account_info(),
+                open_orders_authority: ctx.accounts.pocket.to_account_info(),
                 coin_wallet: ctx.accounts.pocket_base_token_vault.to_account_info(),
                 pc_wallet: ctx.accounts.pocket_target_token_vault.to_account_info(),
                 token_program: ctx.accounts.token_program.to_account_info(),

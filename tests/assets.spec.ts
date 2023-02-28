@@ -96,7 +96,7 @@ describe("assets", async () => {
         signer: owner.publicKey,
         pocket: pocketAccount,
         pocketBaseTokenVault: baseMintVaultAccount,
-        signerTokenAccount: ownerBaseTokenAccount,
+        signerTokenAccount: ownerBaseTokenAccount.address,
       })
       .signers([owner])
       .rpc({commitment: "confirmed"})
@@ -167,8 +167,8 @@ describe("assets", async () => {
         pocket: pocketAccount,
         pocketBaseTokenVault: baseMintVaultAccount,
         pocketTargetTokenVault: targetMintVaultAccount,
-        signerBaseTokenAccount: ownerBaseTokenAccount,
-        signerTargetTokenAccount: ownerTargetTokenAccount
+        signerBaseTokenAccount: ownerBaseTokenAccount.address,
+        signerTargetTokenAccount: ownerTargetTokenAccount.address
       })
       .signers([owner])
       .rpc({commitment: "confirmed"})

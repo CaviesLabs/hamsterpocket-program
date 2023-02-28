@@ -3,36 +3,36 @@ use crate::*;
 // Define the Price condition struct
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq)]
 pub enum PriceCondition {
-    GT {
+    gt {
         value: u64
     },
 
-    GTE {
+    gte {
         value: u64
     },
 
-    LT {
+    lt {
         value: u64
     },
 
-    LTE {
+    lte {
         value: u64
     },
 
-    EQ {
+    eq {
         value: u64
     },
 
-    NEQ {
+    neq {
         value: u64
     },
 
-    BW {
+    bw {
         from_value: u64,
         to_value: u64,
     },
 
-    NBW {
+    nbw {
         from_value: u64,
         to_value: u64,
     },
@@ -40,7 +40,7 @@ pub enum PriceCondition {
 
 impl PriceCondition {
     pub fn default() -> PriceCondition {
-        PriceCondition::EQ { value: 0 }
+        PriceCondition::eq { value: 0 }
     }
 }
 
@@ -62,35 +62,35 @@ impl BuyCondition {
     // Check whether buy condition is valid
     pub fn is_valid(condition: &BuyCondition) -> bool {
         return condition.token_address != Pubkey::default() && match condition.condition {
-            PriceCondition::GT { value } => {
+            PriceCondition::gt { value } => {
                 value.clone() > 0
             },
 
-            PriceCondition::GTE { value } => {
+            PriceCondition::gte { value } => {
                 value.clone() > 0
             },
 
-            PriceCondition::LT { value } => {
+            PriceCondition::lt { value } => {
                 value.clone() > 0
             },
 
-            PriceCondition::LTE { value } => {
+            PriceCondition::lte { value } => {
                 value.clone() > 0
             },
 
-            PriceCondition::EQ { value } => {
+            PriceCondition::eq { value } => {
                 value.clone() > 0
             },
 
-            PriceCondition::NEQ { value } => {
+            PriceCondition::neq { value } => {
                 value.clone() > 0
             },
 
-            PriceCondition::BW { from_value, to_value } => {
+            PriceCondition::bw { from_value, to_value } => {
                 to_value.clone() >= from_value.clone() && from_value.clone() > 0
             },
 
-            PriceCondition::NBW { from_value, to_value } => {
+            PriceCondition::nbw { from_value, to_value } => {
                 to_value.clone() >= from_value.clone() && from_value.clone() > 0
             },
         }
