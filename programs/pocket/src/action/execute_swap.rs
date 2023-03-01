@@ -52,18 +52,18 @@ pub fn handle_execute_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapCo
     // TODO: check for buy condition
 
     // Make Swap
-    make_swap(&ctx).unwrap();
+    external(&ctx).unwrap();
 
     Ok(())
 }
 
-fn make_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
+fn external<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
     let pocket = ctx.accounts.pocket.clone();
 
-    let mut side = Side::Bid;
+    let mut side = external::Side::Bid;
 
     if pocket.side == TradeSide::Sell {
-        side = Side::Ask;
+        side = external::Side::Ask;
     }
 
     let market = &mut ctx.remaining_accounts.get(0).unwrap();
@@ -77,59 +77,57 @@ fn make_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>)
     let open_orders = &mut ctx.remaining_accounts.get(8).unwrap();
     let dex_program = &mut ctx.remaining_accounts.get(9).unwrap();
 
-    new_order_v3(
-        CpiContext::new_with_signer(
-            dex_program.to_account_info(),
-            NewOrderV3 {
-                market: market.to_account_info(),
-                coin_vault: coin_vault.to_account_info(),
-                pc_vault: pc_vault.to_account_info(),
-                request_queue: request_queue.to_account_info(),
-                event_queue: event_queue.to_account_info(),
-                market_bids: market_bids.to_account_info(),
-                market_asks: market_asks.to_account_info(),
-                open_orders: open_orders.to_account_info(),
-                order_payer_token_account: ctx.accounts.pocket_base_token_vault.to_account_info(),
-                open_orders_authority: ctx.accounts.pocket.to_account_info(),
-                token_program: ctx.accounts.token_program.to_account_info(),
-                rent: ctx.accounts.rent.to_account_info(),
-            },
-            &[&[
-                POCKET_SEED,
-                pocket.id.as_bytes().as_ref(),
-                &[pocket.bump],
-            ]],
-        ),
-        side,
-        NonZeroU64::new(NonZeroU64::MAX_VALUE).unwrap(),
-        NonZeroU64::new(NonZeroU64::MAX_VALUE).unwrap(),
-        NonZeroU64::new(pocket.batch_volume).unwrap(),
-        SelfTradeBehavior::DecrementTake,
-        OrderType::ImmediateOrCancel,
-        u64::try_from_slice(&pocket.key().to_bytes()[0..8]).unwrap(),
-        std::u16::MAX,
+    // Init open orders account
+    external::init_account(
+        &external::InitAccount {
+            open_orders: open_orders.to_account_info(),
+            authority: ctx.accounts.signer.to_account_info(),
+            market: market.to_account_info(),
+            dex_program: dex_program.to_account_info(),
+            rent: ctx.accounts.rent.to_account_info()
+        }
     ).unwrap();
 
-    settle_funds(
-        CpiContext::new_with_signer(
-            dex_program.to_account_info(),
-            SettleFunds {
-                market: market.to_account_info(),
-                open_orders: open_orders.to_account_info(),
-                coin_vault: coin_vault.to_account_info(),
-                pc_vault: pc_vault.to_account_info(),
-                vault_signer: market_authority.to_account_info(),
-                open_orders_authority: ctx.accounts.pocket.to_account_info(),
-                coin_wallet: ctx.accounts.pocket_base_token_vault.to_account_info(),
-                pc_wallet: ctx.accounts.pocket_target_token_vault.to_account_info(),
-                token_program: ctx.accounts.token_program.to_account_info(),
+    // Make swap
+    external::swap(external::Swap {
+        market: external::MarketAccounts {
+            market: market.to_account_info(),
+            open_orders: open_orders.to_account_info(),
+            request_queue: request_queue.to_account_info(),
+            event_queue: event_queue.to_account_info(),
+            bids: market_bids.to_account_info(),
+            asks: market_asks.to_account_info(),
+            order_payer_token_account: match side {
+                external::Side::Ask => ctx.accounts.pocket_base_token_vault.to_account_info(),
+                external::Side::Bid => ctx.accounts.pocket_target_token_vault.to_account_info(),
             },
-            &[&[
-                POCKET_SEED,
-                pocket.id.as_bytes().as_ref(),
-                &[pocket.bump],
-            ]],
-        )
+            coin_wallet: ctx.accounts.pocket_base_token_vault.to_account_info(),
+            coin_vault: coin_vault.to_account_info(),
+            pc_vault: pc_vault.to_account_info(),
+            vault_signer: market_authority.to_account_info(),
+        },
+        authority: ctx.accounts.pocket.to_account_info(),
+        pc_wallet: ctx.accounts.pocket_target_token_vault.to_account_info(),
+        dex_program: dex_program.to_account_info(),
+        token_program: ctx.accounts.token_program.to_account_info(),
+        rent: ctx.accounts.rent.to_account_info(),
+        pocket: ctx.accounts.pocket.clone(),
+    }, side, pocket.batch_volume, external::ExchangeRate {
+        rate: 0,
+        from_decimals: 0,
+        quote_decimals: 0,
+        strict: false,
+    }).unwrap();
+
+    // Close open orders account
+    external::close_account(
+        &external::CloseAccount {
+            open_orders: open_orders.to_account_info(),
+            authority: ctx.accounts.signer.to_account_info(),
+            destination: ctx.accounts.signer.to_account_info(),
+            market: market.to_account_info(),
+            dex_program: dex_program.to_account_info(),
+        }
     ).unwrap();
 
     Ok(())
