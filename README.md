@@ -25,7 +25,7 @@ $ yarn install
 anchor build
 solana address -k target/deploy/pocket-keypair.json
 # above program will output the address of program
-# replace all `DL1BQwRmN4Ye4fsmDnPipNrm1XU24x8yDU7c5Ltsqvvc` with your new address
+# replace all `BW5RwMCPY85ch6efYE3Ev43ZQpJytvvjSNbJ2beC9MzV` with your new address
 ```
 ## Deploy swap program onto devnet/mainnet
 
@@ -40,7 +40,7 @@ $  anchor deploy --program-name pocket --provider.cluster devnet --provider.wall
 Upgrade
 
 ```bash
-$ anchor upgrade target/deploy/pocket.so --program-id DL1BQwRmN4Ye4fsmDnPipNrm1XU24x8yDU7c5Ltsqvvc --provider.cluster devnet --provider.wallet ~/.config/solana/id.json
+$ anchor upgrade target/deploy/pocket.so --program-id BW5RwMCPY85ch6efYE3Ev43ZQpJytvvjSNbJ2beC9MzV --provider.cluster devnet --provider.wallet ~/.config/solana/id.json
 ```
 
 2/ Deploy mainnet 
@@ -54,7 +54,7 @@ $  anchor deploy --program-name pocket --provider.cluster mainnet-beta --provide
 Upgrade
 
 ```bash
-$ anchor upgrade target/deploy/pocket.so --program-id DL1BQwRmN4Ye4fsmDnPipNrm1XU24x8yDU7c5Ltsqvvc --provider.cluster mainnet-beta --provider.wallet ~/.config/solana/id.json
+$ anchor upgrade target/deploy/pocket.so --program-id BW5RwMCPY85ch6efYE3Ev43ZQpJytvvjSNbJ2beC9MzV --provider.cluster mainnet-beta --provider.wallet ~/.config/solana/id.json
 ```
 
 

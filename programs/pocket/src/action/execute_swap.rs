@@ -52,12 +52,12 @@ pub fn handle_execute_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapCo
     // TODO: check for buy condition
 
     // Make Swap
-    external(&ctx).unwrap();
+    swap(&ctx).unwrap();
 
     Ok(())
 }
 
-fn external<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
+fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
     let pocket = ctx.accounts.pocket.clone();
 
     let mut side = external::Side::Bid;
