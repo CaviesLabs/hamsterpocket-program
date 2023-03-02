@@ -42,26 +42,9 @@ impl PriceCondition {
     pub fn default() -> PriceCondition {
         PriceCondition::Eq { value: 0 }
     }
-}
 
-// Define the BuyCondition struct
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq)]
-pub struct BuyCondition {
-    pub token_address: Pubkey,
-    pub condition: PriceCondition,
-}
-
-impl BuyCondition {
-    pub fn default() -> BuyCondition {
-        BuyCondition {
-            token_address: Pubkey::default(),
-            condition: PriceCondition::default(),
-        }
-    }
-
-    // Check whether buy condition is valid
-    pub fn is_valid(condition: &BuyCondition) -> bool {
-        return condition.token_address != Pubkey::default() && match condition.condition {
+    pub fn is_valid(price: &PriceCondition) -> bool {
+        return match price {
             PriceCondition::Gt { value } => {
                 value.clone() > 0
             },
@@ -238,7 +221,7 @@ pub struct Pocket {
     pub side: TradeSide,
 
     // Define the buy condition
-    pub buy_condition: Option<BuyCondition>,
+    pub buy_condition: Option<PriceCondition>,
 
     // Define the stop condition
     pub stop_conditions: Vec<StopCondition>,
@@ -308,8 +291,8 @@ impl Pocket {
         assert_eq!(pocket.frequency.hours > 0, true, "Not valid frequency");
         assert_eq!(pocket.batch_volume > 0, true, "Not valid batch volume");
 
-        if pocket.buy_condition.unwrap_or(BuyCondition::default()) != BuyCondition::default() {
-            assert_eq!(BuyCondition::is_valid(&pocket.buy_condition.unwrap()), true, "Not valid buy condition");
+        if pocket.buy_condition.unwrap_or(PriceCondition::default()) != PriceCondition::default() {
+            assert_eq!(PriceCondition::is_valid(&pocket.buy_condition.unwrap()), true, "Not valid buy condition");
         }
 
         let mut primary_count = 0;

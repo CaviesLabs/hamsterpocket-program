@@ -111,7 +111,5 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
         strict: false,
     }).unwrap();
 
-    did_swap.
-
     Ok(())
 }

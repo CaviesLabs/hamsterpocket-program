@@ -139,7 +139,7 @@ pub fn swap<'info>(
     // Safety checks.
     apply_risk_checks(did_swap_data.clone()).unwrap();
 
-    Ok((did_swap_data))
+    Ok(did_swap_data)
 }
 
 /// Swaps two base currencies across two different markets.
@@ -227,7 +227,7 @@ pub fn swap_transitive(
     // Safety checks.
     apply_risk_checks(did_swap_data.clone()).unwrap();
 
-    Ok((did_swap_data))
+    Ok(did_swap_data)
 }
 
 // Asserts the swap event executed at an exchange rate acceptable to the client.

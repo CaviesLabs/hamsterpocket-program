@@ -23,7 +23,7 @@ pub struct CreatePocketParams {
     pub start_at: u64,
 
     // Define the buy condition
-    pub buy_condition: Option<BuyCondition>,
+    pub buy_condition: Option<PriceCondition>,
 
     // Define the stop condition
     pub stop_conditions: Vec<StopCondition>,
