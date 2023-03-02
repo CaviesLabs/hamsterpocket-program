@@ -88,7 +88,7 @@ pub fn swap<'info>(
     side: Side,
     amount: u64,
     min_exchange_rate: ExchangeRate,
-) -> Result<()> {
+) -> Result<DidSwap> {
     let mut min_exchange_rate = min_exchange_rate;
 
     // Not used for direct swaps.
@@ -120,8 +120,7 @@ pub fn swap<'info>(
     let from_amount = from_amount_before.checked_sub(from_amount_after).unwrap();
     let to_amount = to_amount_after.checked_sub(to_amount_before).unwrap();
 
-    // Safety checks.
-    apply_risk_checks(DidSwap {
+    let did_swap_data = DidSwap {
         authority: *ctx.authority.key,
         given_amount: amount,
         min_exchange_rate,
@@ -135,9 +134,12 @@ pub fn swap<'info>(
             Side::Bid => token::accessor::mint(from_token).unwrap(),
             Side::Ask => token::accessor::mint(to_token).unwrap(),
         },
-    }).unwrap();
+    };
 
-    Ok(())
+    // Safety checks.
+    apply_risk_checks(did_swap_data.clone()).unwrap();
+
+    Ok((did_swap_data))
 }
 
 /// Swaps two base currencies across two different markets.
@@ -160,7 +162,7 @@ pub fn swap_transitive(
     ctx: SwapTransitive,
     amount: u64,
     min_exchange_rate: ExchangeRate,
-) -> Result<()> {
+) -> Result<DidSwap> {
     // Leg 1: Sell Token A for USD(x) (or whatever quote currency is used).
     let (from_amount, sell_proceeds) = {
         // Token balances before the trade.
@@ -209,8 +211,7 @@ pub fn swap_transitive(
     // second half of the swap.
     let spill_amount = sell_proceeds.checked_sub(buy_proceeds).unwrap();
 
-    // Safety checks.
-    apply_risk_checks(DidSwap {
+    let did_swap_data = DidSwap {
         given_amount: amount,
         min_exchange_rate,
         from_amount,
@@ -221,9 +222,12 @@ pub fn swap_transitive(
         to_mint: token::accessor::mint(&ctx.to.coin_wallet).unwrap(),
         quote_mint: token::accessor::mint(&ctx.pc_wallet).unwrap(),
         authority: *ctx.authority.key,
-    }).unwrap();
+    };
 
-    Ok(())
+    // Safety checks.
+    apply_risk_checks(did_swap_data.clone()).unwrap();
+
+    Ok((did_swap_data))
 }
 
 // Asserts the swap event executed at an exchange rate acceptable to the client.
@@ -729,6 +733,7 @@ fn _is_valid_swap<'info>(from: &AccountInfo<'info>, to: &AccountInfo<'info>) -> 
 // Event emitted when a swap occurs for two base currencies on two different
 // markets (quoted in the same token).
 #[event]
+#[derive(Clone, Copy)]
 pub struct DidSwap {
     // User given (max) amount  of the "from" token to swap.
     pub given_amount: u64,
@@ -759,7 +764,7 @@ pub struct DidSwap {
 }
 
 // An exchange rate for swapping *from* one token *to* another.
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 pub struct ExchangeRate {
     // The amount of *to* tokens one should receive for a single *from token.
     // This number must be in native *to* units with the same amount of decimals

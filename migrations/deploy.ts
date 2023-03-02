@@ -204,7 +204,6 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     // .postInstructions(cleanUpInx)
     .remainingAccounts([
     // serum dex accounts
-    {pubkey: market.publicKey, isSigner: false, isWritable: true},
     {pubkey: market.decoded.eventQueue, isSigner: false, isWritable: true},
     {pubkey: market.decoded.requestQueue, isSigner: false, isWritable: true},
     {pubkey: market.decoded.bids, isSigner: false, isWritable: true},

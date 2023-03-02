@@ -70,18 +70,18 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
         side = Side::Bid;
     }
 
-    let event_queue = &mut ctx.remaining_accounts.get(1).unwrap();
-    let request_queue = &mut ctx.remaining_accounts.get(2).unwrap();
-    let market_bids = &mut ctx.remaining_accounts.get(3).unwrap();
-    let market_asks = &mut ctx.remaining_accounts.get(4).unwrap();
-    let coin_vault = &mut ctx.remaining_accounts.get(5).unwrap();
-    let pc_vault = &mut ctx.remaining_accounts.get(6).unwrap();
-    let market_authority = &mut ctx.remaining_accounts.get(7).unwrap();
-    let open_orders = &mut ctx.remaining_accounts.get(8).unwrap();
-    let dex_program = &mut ctx.remaining_accounts.get(9).unwrap();
+    let event_queue = &mut ctx.remaining_accounts.get(0).unwrap();
+    let request_queue = &mut ctx.remaining_accounts.get(1).unwrap();
+    let market_bids = &mut ctx.remaining_accounts.get(2).unwrap();
+    let market_asks = &mut ctx.remaining_accounts.get(3).unwrap();
+    let coin_vault = &mut ctx.remaining_accounts.get(4).unwrap();
+    let pc_vault = &mut ctx.remaining_accounts.get(5).unwrap();
+    let market_authority = &mut ctx.remaining_accounts.get(6).unwrap();
+    let open_orders = &mut ctx.remaining_accounts.get(7).unwrap();
+    let dex_program = &mut ctx.remaining_accounts.get(8).unwrap();
 
     // Make swap
-    external::swap(Swap {
+    let did_swap = external::swap(Swap {
         market: MarketAccounts {
             market: ctx.accounts.market_key.to_account_info(),
             open_orders: open_orders.to_account_info(),
@@ -104,12 +104,14 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
         token_program: ctx.accounts.token_program.to_account_info(),
         rent: ctx.accounts.rent.to_account_info(),
         pocket: ctx.accounts.pocket.clone(),
-    }, side, pocket.batch_volume, external::ExchangeRate {
+    }, side, pocket.batch_volume, ExchangeRate {
         rate: 0,
         from_decimals: 0,
         quote_decimals: 0,
         strict: false,
     }).unwrap();
+
+    did_swap.
 
     Ok(())
 }
