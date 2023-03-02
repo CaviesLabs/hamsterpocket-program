@@ -6,11 +6,15 @@ pub struct ExecuteSwapContext<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
+    #[account(mut)]
+    pub pocket: Account<'info, Pocket>,
+
+    /// CHECK: skip verification
     #[account(
         mut,
-        constraint = pocket.owner == signer.key() @ PocketError::OnlyOwner
+        address = pocket.market_key,
     )]
-    pub pocket: Account<'info, Pocket>,
+    pub market_key: AccountInfo<'info>,
 
     #[account(
         seeds = [PLATFORM_SEED],
@@ -60,13 +64,12 @@ pub fn handle_execute_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapCo
 fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
     let pocket = ctx.accounts.pocket.clone();
 
-    let mut side = external::Side::Bid;
+    let mut side = Side::Ask;
 
-    if pocket.side == TradeSide::Sell {
-        side = external::Side::Ask;
+    if pocket.side == TradeSide::Buy {
+        side = Side::Bid;
     }
 
-    let market = &mut ctx.remaining_accounts.get(0).unwrap();
     let event_queue = &mut ctx.remaining_accounts.get(1).unwrap();
     let request_queue = &mut ctx.remaining_accounts.get(2).unwrap();
     let market_bids = &mut ctx.remaining_accounts.get(3).unwrap();
@@ -77,29 +80,18 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
     let open_orders = &mut ctx.remaining_accounts.get(8).unwrap();
     let dex_program = &mut ctx.remaining_accounts.get(9).unwrap();
 
-    // Init open orders account
-    external::init_account(
-        &external::InitAccount {
-            open_orders: open_orders.to_account_info(),
-            authority: ctx.accounts.signer.to_account_info(),
-            market: market.to_account_info(),
-            dex_program: dex_program.to_account_info(),
-            rent: ctx.accounts.rent.to_account_info()
-        }
-    ).unwrap();
-
     // Make swap
-    external::swap(external::Swap {
-        market: external::MarketAccounts {
-            market: market.to_account_info(),
+    external::swap(Swap {
+        market: MarketAccounts {
+            market: ctx.accounts.market_key.to_account_info(),
             open_orders: open_orders.to_account_info(),
             request_queue: request_queue.to_account_info(),
             event_queue: event_queue.to_account_info(),
             bids: market_bids.to_account_info(),
             asks: market_asks.to_account_info(),
             order_payer_token_account: match side {
-                external::Side::Ask => ctx.accounts.pocket_base_token_vault.to_account_info(),
-                external::Side::Bid => ctx.accounts.pocket_target_token_vault.to_account_info(),
+                Side::Bid => ctx.accounts.pocket_target_token_vault.to_account_info(),
+                Side::Ask => ctx.accounts.pocket_base_token_vault.to_account_info(),
             },
             coin_wallet: ctx.accounts.pocket_base_token_vault.to_account_info(),
             coin_vault: coin_vault.to_account_info(),
@@ -118,17 +110,6 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
         quote_decimals: 0,
         strict: false,
     }).unwrap();
-
-    // Close open orders account
-    external::close_account(
-        &external::CloseAccount {
-            open_orders: open_orders.to_account_info(),
-            authority: ctx.accounts.signer.to_account_info(),
-            destination: ctx.accounts.signer.to_account_info(),
-            market: market.to_account_info(),
-            dex_program: dex_program.to_account_info(),
-        }
-    ).unwrap();
 
     Ok(())
 }

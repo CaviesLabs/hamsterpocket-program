@@ -225,6 +225,9 @@ pub struct Pocket {
     // Define target token
     pub target_token_mint_address: Pubkey,
 
+    // Define the associated market
+    pub market_key: Pubkey,
+
     // Here we define the batch volume, the amount swap every batches
     pub batch_volume: u64,
 

@@ -14,6 +14,8 @@ pub struct CreatePocketParams {
     // Define target token
     pub target_token_address: Pubkey,
 
+    pub market_key: Pubkey,
+
     // Here we define the batch volume, the amount swap every batches
     pub batch_volume: u64,
 
@@ -86,6 +88,7 @@ impl<'info> CreatePocketContext<'info> {
         self.pocket.stop_conditions = params.stop_conditions;
         self.pocket.frequency = params.frequency;
         self.pocket.side = params.side;
+        self.pocket.market_key = params.market_key;
 
         // assign default values
         self.pocket.bump = pocket_bump;

@@ -1,18 +1,7 @@
-use std::num::NonZeroU64;
-
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{system_program, sysvar};
-use anchor_lang::__private::bytemuck::Contiguous;
 
 use anchor_spl::{
-    dex::{
-        new_order_v3, settle_funds, SettleFunds,
-        serum_dex::{
-            instruction::SelfTradeBehavior,
-            matching::{OrderType, Side},
-        },
-        NewOrderV3,
-    },
     token::{self, Token, TokenAccount, Transfer, Mint},
 };
 
@@ -30,6 +19,8 @@ pub use error::*;
 pub use state::*;
 pub use event::*;
 pub use macros::*;
+pub use external::*;
+
 
 declare_id!("BW5RwMCPY85ch6efYE3Ev43ZQpJytvvjSNbJ2beC9MzV");
 
@@ -116,6 +107,46 @@ pub mod pocket {
     ) -> Result<()> {
         // process
         ctx.accounts.execute().unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
+
+    pub fn init_swap_registry<'info>(
+        ctx: Context<'_, '_, '_, 'info, InitAccount<'info>>
+    ) -> Result<()> {
+
+        // Init open orders account
+        init_account(
+            &InitAccount {
+                open_orders: ctx.accounts.open_orders.to_account_info(),
+                dex_program: ctx.accounts.dex_program.to_account_info(),
+                authority: ctx.accounts.pocket.to_account_info(),
+                market_key: ctx.accounts.market_key.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+                pocket: ctx.accounts.pocket.clone(),
+            }
+        ).unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
+
+    pub fn close_swap_registry<'info>(
+        ctx: Context<'_, '_, '_, 'info, CloseAccount<'info>>
+    ) -> Result<()> {
+
+        // Close open orders account
+        close_account(
+            &CloseAccount {
+                open_orders: ctx.accounts.open_orders.to_account_info(),
+                dex_program: ctx.accounts.dex_program.to_account_info(),
+                authority: ctx.accounts.pocket.to_account_info(),
+                destination: ctx.accounts.destination.to_account_info(),
+                market_key: ctx.accounts.market_key.to_account_info(),
+                pocket: ctx.accounts.pocket.clone(),
+            }
+        ).unwrap();
 
         // Program result should be ok.
         Ok(())

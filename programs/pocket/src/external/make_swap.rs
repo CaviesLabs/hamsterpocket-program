@@ -15,7 +15,7 @@ use anchor_spl::dex::serum_dex::state::MarketState;
 use anchor_spl::token;
 use std::num::NonZeroU64;
 use anchor_spl::dex::{CloseOpenOrders, InitOpenOrders};
-use crate::{POCKET_SEED, Pocket};
+use crate::{POCKET_SEED, Pocket, pocket_emit};
 
 // Associated token account for Pubkey::default.
 mod empty {
@@ -25,13 +25,22 @@ mod empty {
 
 /// Convenience API to initialize an open orders account on the Serum DEX.
 pub fn init_account(data: &InitAccount) -> Result<()> {
-    let ctx = CpiContext::new(data.dex_program.clone(), InitOpenOrders {
-        open_orders: data.open_orders.to_account_info(),
-        authority: data.authority.to_account_info(),
-        market: data.market.to_account_info(),
-        rent: data.rent.to_account_info(),
-    });
-    dex::init_open_orders(ctx).unwrap();
+    let pocket = data.pocket.clone();
+
+    dex::init_open_orders(CpiContext::new_with_signer(
+        data.dex_program.clone(),
+        InitOpenOrders {
+            open_orders: data.open_orders.to_account_info(),
+            authority: data.authority.to_account_info(),
+            market: data.market_key.to_account_info(),
+            rent: data.rent.to_account_info(),
+        },
+        &[&[
+            POCKET_SEED,
+            pocket.id.as_bytes().as_ref(),
+            &[pocket.bump],
+        ]],
+    )).unwrap();
     Ok(())
 }
 
@@ -39,13 +48,24 @@ pub fn init_account(data: &InitAccount) -> Result<()> {
 pub fn close_account(
     data: &CloseAccount,
 ) -> Result<()> {
-    let ctx = CpiContext::new(data.dex_program.clone(), CloseOpenOrders {
-        open_orders: data.open_orders.to_account_info(),
-        authority: data.authority.to_account_info(),
-        destination: data.destination.to_account_info(),
-        market: data.market.to_account_info(),
-    });
-    dex::close_open_orders(ctx).unwrap();
+    let pocket = data.pocket.clone();
+
+    dex::close_open_orders(
+        CpiContext::new_with_signer(
+            data.dex_program.clone(),
+            CloseOpenOrders {
+                open_orders: data.open_orders.to_account_info(),
+                authority: data.authority.to_account_info(),
+                destination: data.destination.to_account_info(),
+                market: data.market_key.to_account_info(),
+            },
+            &[&[
+                POCKET_SEED,
+                pocket.id.as_bytes().as_ref(),
+                &[pocket.bump],
+            ]],
+        )
+    ).unwrap();
     Ok(())
 }
 
@@ -62,7 +82,7 @@ pub fn close_account(
 /// * `amount`            - The amount to swap *from*
 /// * `min_exchange_rate` - The exchange rate to use when determining
 ///    whether the transaction should abort.
-#[access_control(is_valid_swap(&ctx))]
+#[access_control(is_valid_swap(& ctx))]
 pub fn swap<'info>(
     ctx: Swap<'info>,
     side: Side,
@@ -135,7 +155,7 @@ pub fn swap<'info>(
 /// * `amount`            - The amount to swap *from*.
 /// * `min_exchange_rate` - The exchange rate to use when determining
 ///    whether the transaction should abort.
-#[access_control(is_valid_swap_transitive(&ctx))]
+#[access_control(is_valid_swap_transitive(& ctx))]
 pub fn swap_transitive(
     ctx: SwapTransitive,
     amount: u64,
@@ -209,7 +229,7 @@ pub fn swap_transitive(
 // Asserts the swap event executed at an exchange rate acceptable to the client.
 fn apply_risk_checks(event: DidSwap) -> Result<()> {
     // Emit the event for client consumption.
-    emit!(event);
+    pocket_emit!(event);
 
     if event.to_amount == 0 {
         return Err(ErrorCode::ZeroSwap.into());
@@ -323,26 +343,28 @@ fn apply_risk_checks(event: DidSwap) -> Result<()> {
 
 #[derive(Accounts)]
 pub struct InitAccount<'info> {
+    /// CHECK: skip verification
+    pub pocket: Account<'info, Pocket>,
     #[account(mut)]
     /// CHECK: skip verification
     pub open_orders: AccountInfo<'info>,
-    #[account(signer)]
     /// CHECK: skip verification
+    #[account(mut)]
     pub authority: AccountInfo<'info>,
     /// CHECK: skip verification
-    pub market: AccountInfo<'info>,
+    pub market_key: AccountInfo<'info>,
     /// CHECK: skip verification
     pub dex_program: AccountInfo<'info>,
     /// CHECK: skip verification
     pub rent: AccountInfo<'info>,
 }
 
-impl<'info> From<&mut InitAccount<'info>> for dex::InitOpenOrders<'info> {
-    fn from(accs: &mut InitAccount<'info>) -> dex::InitOpenOrders<'info> {
-        dex::InitOpenOrders {
+impl<'info> From<&mut InitAccount<'info>> for InitOpenOrders<'info> {
+    fn from(accs: &mut InitAccount<'info>) -> InitOpenOrders<'info> {
+        InitOpenOrders {
             open_orders: accs.open_orders.clone(),
             authority: accs.authority.clone(),
-            market: accs.market.clone(),
+            market: accs.market_key.clone(),
             rent: accs.rent.clone(),
         }
     }
@@ -350,28 +372,30 @@ impl<'info> From<&mut InitAccount<'info>> for dex::InitOpenOrders<'info> {
 
 #[derive(Accounts)]
 pub struct CloseAccount<'info> {
+    /// CHECK: skip verification
+    pub pocket: Account<'info, Pocket>,
     #[account(mut)]
     /// CHECK: skip verification
     pub open_orders: AccountInfo<'info>,
-    #[account(signer)]
+    #[account(mut)]
     /// CHECK: skip verification
     pub authority: AccountInfo<'info>,
     #[account(mut)]
     /// CHECK: skip verification
     pub destination: AccountInfo<'info>,
     /// CHECK: skip verification
-    pub market: AccountInfo<'info>,
+    pub market_key: AccountInfo<'info>,
     /// CHECK: skip verification
     pub dex_program: AccountInfo<'info>,
 }
 
-impl<'info> From<&mut CloseAccount<'info>> for dex::CloseOpenOrders<'info> {
-    fn from(accs: &mut CloseAccount<'info>) -> dex::CloseOpenOrders<'info> {
-        dex::CloseOpenOrders {
+impl<'info> From<&mut CloseAccount<'info>> for CloseOpenOrders<'info> {
+    fn from(accs: &mut CloseAccount<'info>) -> CloseOpenOrders<'info> {
+        CloseOpenOrders {
             open_orders: accs.open_orders.clone(),
             authority: accs.authority.clone(),
             destination: accs.destination.clone(),
-            market: accs.market.clone(),
+            market: accs.market_key.clone(),
         }
     }
 }
