@@ -11,14 +11,14 @@ pub struct ExecuteSwapContext<'info> {
 
     /// CHECK: skip verification
     #[account(
-        mut,
-        address = pocket.market_key,
+    mut,
+    address = pocket.market_key,
     )]
     pub market_key: AccountInfo<'info>,
 
     #[account(
-        seeds = [PLATFORM_SEED],
-        bump = pocket_registry.bump,
+    seeds = [PLATFORM_SEED],
+    bump = pocket_registry.bump,
     )]
     pub pocket_registry: Account<'info, PocketPlatformRegistry>,
 
@@ -64,12 +64,13 @@ pub fn handle_execute_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapCo
 fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
     let pocket = ctx.accounts.pocket.clone();
 
+    // Determine side
     let mut side = Side::Ask;
-
     if pocket.side == TradeSide::Buy {
         side = Side::Bid;
     }
 
+    // Extract accounts
     let event_queue = &mut ctx.remaining_accounts.get(0).unwrap();
     let request_queue = &mut ctx.remaining_accounts.get(1).unwrap();
     let market_bids = &mut ctx.remaining_accounts.get(2).unwrap();
@@ -110,6 +111,88 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
         quote_decimals: 0,
         strict: false,
     }).unwrap();
+
+    // Validate buy condition
+    validate_buy_condition(&pocket, &did_swap).unwrap();
+
+    // TODO: update pocket statistic (next scheduled time, balance ...)
+
+    // TODO: Auto close the pocket if stop condition reached
+
+    Ok(())
+}
+
+fn validate_buy_condition(pocket: &Pocket, swap_data: &DidSwap) -> Result<()> {
+    let did_swap = swap_data.clone();
+
+    // Check for buy condition
+    match pocket.buy_condition.clone() {
+        None => {}
+
+        Some(PriceCondition::Bw { from_value, to_value }) => {
+            assert_eq!(
+                did_swap.to_amount <= to_value && did_swap.to_amount >= from_value,
+                true,
+                "EXCHANGE_RATE_NOT_FULFILLED"
+            );
+        }
+
+        Some(PriceCondition::Nbw { from_value, to_value }) => {
+            assert_eq!(
+                did_swap.to_amount <= to_value && did_swap.to_amount >= from_value,
+                false,
+                "EXCHANGE_RATE_NOT_FULFILLED"
+            );
+        }
+
+        Some(PriceCondition::Gt { value }) => {
+            assert_eq!(
+                did_swap.to_amount > value,
+                true,
+                "EXCHANGE_RATE_NOT_FULFILLED"
+            );
+        }
+
+        Some(PriceCondition::Gte { value }) => {
+            assert_eq!(
+                did_swap.to_amount >= value,
+                true,
+                "EXCHANGE_RATE_NOT_FULFILLED"
+            );
+        }
+
+        Some(PriceCondition::Lt { value }) => {
+            assert_eq!(
+                did_swap.to_amount < value,
+                true,
+                "EXCHANGE_RATE_NOT_FULFILLED"
+            );
+        }
+
+        Some(PriceCondition::Lte { value }) => {
+            assert_eq!(
+                did_swap.to_amount <= value,
+                true,
+                "EXCHANGE_RATE_NOT_FULFILLED"
+            );
+        }
+
+        Some(PriceCondition::Eq { value }) => {
+            assert_eq!(
+                did_swap.to_amount == value,
+                true,
+                "EXCHANGE_RATE_NOT_FULFILLED"
+            );
+        }
+
+        Some(PriceCondition::Neq { value }) => {
+            assert_eq!(
+                did_swap.to_amount != value,
+                true,
+                "EXCHANGE_RATE_NOT_FULFILLED"
+            );
+        }
+    }
 
     Ok(())
 }
