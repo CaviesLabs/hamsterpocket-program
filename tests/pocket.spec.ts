@@ -27,7 +27,7 @@ describe("pocket", async () => {
     const pocketData = {
       id: pocketId,
       side: {buy: {}},
-      targetTokenAddress: targetMintAccount,
+      quoteTokenAddress: targetMintAccount,
       baseTokenAddress: baseMintAccount,
       stopConditions: [],
       buyCondition: null,
@@ -35,10 +35,10 @@ describe("pocket", async () => {
       batchVolume: new anchor.BN((LAMPORTS_PER_SOL * 10).toString()),
       name: "pocket name",
       frequency: { hours: new anchor.BN(1) },
+      marketKey: Keypair.generate().publicKey,
     };
 
     const txId = await program.methods
-      // @ts-ignore
       .createPocket(pocketData)
       .accounts({
         pocket: pocketAccount,
@@ -59,7 +59,7 @@ describe("pocket", async () => {
     expect(pocket.owner.equals(owner.publicKey)).to.be.true;
     expect(pocket.id === pocketData.id).to.be.true;
     expect(pocket.startAt.eq(pocketData.startAt)).to.be.true;
-    expect(pocket.targetTokenMintAddress.equals(pocketData.targetTokenAddress))
+    expect(pocket.quoteTokenMintAddress.equals(pocketData.quoteTokenAddress))
       .to.be.true;
     expect(pocket.baseTokenMintAddress.equals(pocketData.baseTokenAddress)).to
       .be.true;
@@ -68,6 +68,7 @@ describe("pocket", async () => {
     expect(!!pocket.buyCondition).to.be.false;
     expect(pocket.frequency.hours.eq(pocketData.frequency.hours)).to.be.true;
     expect(pocket.batchVolume.eq(pocketData.batchVolume)).to.be.true;
+    expect(pocket.marketKey.equals(pocketData.marketKey)).to.be.true;
 
 
     // expect log
@@ -208,7 +209,7 @@ describe("pocket", async () => {
     // Expect emitted logs
     expect(event.name).eq('PocketUpdated');
     expect(
-      (event.data as any).owner.equals(owner.publicKey)
+      (event.data as any).actor.equals(owner.publicKey)
     ).equals(true);
     expect(
       (event.data as any).pocketAddress.equals(pocketAccount)

@@ -88,7 +88,7 @@ impl<'info> WithdrawContext<'info> {
                base_token_mint_address: pocket.base_token_mint_address,
                base_token_amount: self.pocket_base_token_vault.amount,
                quote_token_mint_address: pocket.quote_token_mint_address,
-               target_token_amount: self.pocket_quote_token_vault.amount
+               quote_token_amount: self.pocket_quote_token_vault.amount
             }
         );
 

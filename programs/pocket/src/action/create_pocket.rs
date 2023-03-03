@@ -12,7 +12,7 @@ pub struct CreatePocketParams {
     pub base_token_address: Pubkey,
 
     // Define target token
-    pub target_token_address: Pubkey,
+    pub quote_token_address: Pubkey,
 
     pub market_key: Pubkey,
 
@@ -82,7 +82,7 @@ impl<'info> CreatePocketContext<'info> {
         self.pocket.start_at = params.start_at;
         self.pocket.name = params.name;
         self.pocket.base_token_mint_address = params.base_token_address;
-        self.pocket.quote_token_mint_address = params.target_token_address;
+        self.pocket.quote_token_mint_address = params.quote_token_address;
         self.pocket.batch_volume = params.batch_volume;
         self.pocket.buy_condition = params.buy_condition;
         self.pocket.stop_conditions = params.stop_conditions;

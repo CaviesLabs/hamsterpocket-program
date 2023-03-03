@@ -1,8 +1,7 @@
 import * as anchor from "@project-serum/anchor";
-import { LAMPORTS_PER_SOL, PublicKey, Connection } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 import { BorshCoder, EventParser } from "@project-serum/anchor";
-import { Market } from '@openbook-dex/openbook';
 
 
 import { getFixtures } from "./test.helper";
@@ -31,7 +30,7 @@ describe("assets", async () => {
     const pocketData = {
       id: pocketId,
       side: {buy: {}},
-      targetTokenAddress: targetMintAccount,
+      quoteTokenAddress: targetMintAccount,
       baseTokenAddress: baseMintAccount,
       stopConditions: [],
       buyCondition: null,
@@ -39,6 +38,7 @@ describe("assets", async () => {
       batchVolume: new anchor.BN((LAMPORTS_PER_SOL * 10).toString()),
       name: "pocket name",
       frequency: { hours: new anchor.BN(1) },
+      marketKey: Keypair.generate().publicKey,
     };
 
     const inx = [
@@ -63,7 +63,6 @@ describe("assets", async () => {
     ];
 
     await program.methods
-      // @ts-ignore
       .createPocket(pocketData)
       .accounts({
         pocket: pocketAccount,
@@ -85,18 +84,23 @@ describe("assets", async () => {
       owner,
       baseMintAccount,
       baseMintVaultAccount,
+      targetMintVaultAccount,
       ownerBaseTokenAccount,
+      ownerTargetTokenAccount
     } = fixtures;
 
     const txId = await program.methods
       .deposit({
         depositAmount: new anchor.BN(LAMPORTS_PER_SOL * 2),
+        mode: {base: {}}
       })
       .accounts({
         signer: owner.publicKey,
         pocket: pocketAccount,
         pocketBaseTokenVault: baseMintVaultAccount,
-        signerTokenAccount: ownerBaseTokenAccount.address,
+        pocketQuoteTokenVault: targetMintVaultAccount,
+        signerBaseTokenAccount: ownerBaseTokenAccount.address,
+        signerQuoteTokenAccount: ownerTargetTokenAccount.address,
       })
       .signers([owner])
       .rpc({commitment: "confirmed"})
@@ -104,7 +108,8 @@ describe("assets", async () => {
 
     const pocketState = await program.account.pocket.fetch(pocketAccount);
 
-    expect(pocketState.totalDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))).to.be.true;
+    expect(pocketState.totalBaseDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))).to.be.true;
+    expect(pocketState.totalQuoteDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 0))).to.be.true;
     expect(pocketState.baseTokenBalance.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))).to.be.true;
 
     // expect log
@@ -166,7 +171,7 @@ describe("assets", async () => {
         signer: owner.publicKey,
         pocket: pocketAccount,
         pocketBaseTokenVault: baseMintVaultAccount,
-        pocketTargetTokenVault: targetMintVaultAccount,
+        pocketQuoteTokenVault: targetMintVaultAccount,
         signerBaseTokenAccount: ownerBaseTokenAccount.address,
         signerTargetTokenAccount: ownerTargetTokenAccount.address
       })
@@ -176,9 +181,10 @@ describe("assets", async () => {
 
     const pocketState = await program.account.pocket.fetch(pocketAccount);
 
-    expect(pocketState.totalDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))).to.be.true;
+    expect(pocketState.totalBaseDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 2))).to.be.true;
+    expect(pocketState.totalQuoteDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 0))).to.be.true;
     expect(pocketState.baseTokenBalance.eq(new anchor.BN(0))).to.be.true;
-    expect(pocketState.targetTokenBalance.eq(new anchor.BN(0))).to.be.true;
+    expect(pocketState.quoteTokenBalance.eq(new anchor.BN(0))).to.be.true;
 
     // expect log
     const transaction = await provider.connection.getParsedTransaction(txId as string, {
@@ -207,10 +213,10 @@ describe("assets", async () => {
     ).equals(true);
 
     expect(
-      (event.data as any).targetTokenMintAddress.equals(targetMintAccount)
+      (event.data as any).quoteTokenMintAddress.equals(targetMintAccount)
     ).equals(true);
     expect(
-      (event.data as any).targetTokenAmount.eq(new anchor.BN(0))
+      (event.data as any).quoteTokenAmount.eq(new anchor.BN(0))
     ).equals(true);
   })
 
