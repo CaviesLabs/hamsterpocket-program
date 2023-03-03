@@ -23,7 +23,7 @@ pub struct WithdrawContext<'info> {
     pub pocket_base_token_vault: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    pub pocket_target_token_vault: Account<'info, TokenAccount>,
+    pub pocket_quote_token_vault: Account<'info, TokenAccount>,
 
     #[account(address = system_program::ID)]
     pub system_program: Program<'info, System>,
@@ -39,7 +39,7 @@ impl<'info> WithdrawContext<'info> {
         assert_eq!(pocket.is_able_to_withdraw(), true, "The pocket is not able to be withdrawn");
 
         let pocket_base_token_vault = &self.pocket_base_token_vault;
-        let pocket_target_token_vault = &self.pocket_target_token_vault;
+        let pocket_quote_token_vault = &self.pocket_quote_token_vault;
 
         let signer_base_token_vault = &self.signer_base_token_account;
         let signer_target_token_vault = &self.signer_target_token_account;
@@ -67,13 +67,13 @@ impl<'info> WithdrawContext<'info> {
             CpiContext::new_with_signer(
                 self.token_program.to_account_info(),
                 Transfer {
-                    from: pocket_target_token_vault.to_account_info(),
+                    from: pocket_quote_token_vault.to_account_info(),
                     to: signer_target_token_vault.to_account_info(),
                     authority: pocket.to_account_info(),
                 },
                 signer,
             ),
-            self.pocket_target_token_vault.amount,
+            self.pocket_quote_token_vault.amount,
         ).unwrap();
 
         // update credited balance
@@ -88,7 +88,7 @@ impl<'info> WithdrawContext<'info> {
                base_token_mint_address: pocket.base_token_mint_address,
                base_token_amount: self.pocket_base_token_vault.amount,
                quote_token_mint_address: pocket.quote_token_mint_address,
-               target_token_amount: self.pocket_target_token_vault.amount
+               target_token_amount: self.pocket_quote_token_vault.amount
             }
         );
 

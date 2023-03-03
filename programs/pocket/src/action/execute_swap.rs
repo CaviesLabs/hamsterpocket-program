@@ -26,7 +26,7 @@ pub struct ExecuteSwapContext<'info> {
     pub pocket_base_token_vault: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    pub pocket_target_token_vault: Account<'info, TokenAccount>,
+    pub pocket_quote_token_vault: Account<'info, TokenAccount>,
 
     #[account(address = system_program::ID)]
     pub system_program: Program<'info, System>,
@@ -260,6 +260,24 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
         side = Side::Bid;
     }
 
+    let amount_to_swap = match pocket.side {
+        TradeSide::Buy => {
+            if pocket.batch_volume <= pocket.quote_token_balance {
+                pocket.batch_volume
+            } else {
+                pocket.quote_token_balance
+            }
+        }
+
+        TradeSide::Sell => {
+            if pocket.batch_volume <= pocket.base_token_balance {
+                pocket.batch_volume
+            } else {
+                pocket.base_token_balance
+            }
+        }
+    };
+
     // Extract accounts
     let event_queue = &mut ctx.remaining_accounts.get(0).unwrap();
     let request_queue = &mut ctx.remaining_accounts.get(1).unwrap();
@@ -281,7 +299,7 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
             bids: market_bids.to_account_info(),
             asks: market_asks.to_account_info(),
             order_payer_token_account: match side {
-                Side::Bid => ctx.accounts.pocket_target_token_vault.to_account_info(),
+                Side::Bid => ctx.accounts.pocket_quote_token_vault.to_account_info(),
                 Side::Ask => ctx.accounts.pocket_base_token_vault.to_account_info(),
             },
             coin_wallet: ctx.accounts.pocket_base_token_vault.to_account_info(),
@@ -290,12 +308,12 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
             vault_signer: market_authority.to_account_info(),
         },
         authority: ctx.accounts.pocket.to_account_info(),
-        pc_wallet: ctx.accounts.pocket_target_token_vault.to_account_info(),
+        pc_wallet: ctx.accounts.pocket_quote_token_vault.to_account_info(),
         dex_program: dex_program.to_account_info(),
         token_program: ctx.accounts.token_program.to_account_info(),
         rent: ctx.accounts.rent.to_account_info(),
         pocket: ctx.accounts.pocket.clone(),
-    }, side, pocket.batch_volume, ExchangeRate {
+    }, side, amount_to_swap, ExchangeRate {
         rate: 0,
         from_decimals: 0,
         quote_decimals: 0,
