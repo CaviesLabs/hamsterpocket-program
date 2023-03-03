@@ -36,7 +36,7 @@ impl<'info> WithdrawContext<'info> {
     pub fn execute(&mut self) -> Result<()> {
         let pocket = &mut self.pocket;
 
-        assert_eq!(pocket.is_able_to_withdraw(), true, "The pocket is not able to be withdrawn");
+        assert_eq!(pocket.is_able_to_withdraw(), true, "NOT_ABLE_TO_WITHDRAW");
 
         let pocket_base_token_vault = &self.pocket_base_token_vault;
         let pocket_quote_token_vault = &self.pocket_quote_token_vault;
