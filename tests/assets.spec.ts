@@ -173,7 +173,7 @@ describe("assets", async () => {
         pocketBaseTokenVault: baseMintVaultAccount,
         pocketQuoteTokenVault: targetMintVaultAccount,
         signerBaseTokenAccount: ownerBaseTokenAccount.address,
-        signerTargetTokenAccount: ownerTargetTokenAccount.address
+        signerQuoteTokenAccount: ownerTargetTokenAccount.address
       })
       .signers([owner])
       .rpc({commitment: "confirmed"})

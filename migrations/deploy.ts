@@ -439,7 +439,7 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
       pocketBaseTokenVault: baseMintVaultAccount,
       pocketQuoteTokenVault: targetMintVaultAccount,
       signerBaseTokenAccount: ownerBaseTokenAccount.address,
-      signerTargetTokenAccount: ownerTargetTokenAccount.address
+      signerQuoteTokenAccount: ownerTargetTokenAccount.address
     })
     .instruction());
 

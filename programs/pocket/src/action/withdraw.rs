@@ -17,7 +17,7 @@ pub struct WithdrawContext<'info> {
 
     #[account(mut)]
     /// CHECK: the signer token account can be verified later
-    pub signer_target_token_account: AccountInfo<'info>,
+    pub signer_quote_token_account: AccountInfo<'info>,
 
     #[account(mut)]
     pub pocket_base_token_vault: Account<'info, TokenAccount>,
@@ -42,7 +42,7 @@ impl<'info> WithdrawContext<'info> {
         let pocket_quote_token_vault = &self.pocket_quote_token_vault;
 
         let signer_base_token_vault = &self.signer_base_token_account;
-        let signer_target_token_vault = &self.signer_target_token_account;
+        let signer_quote_token_vault = &self.signer_quote_token_account;
 
         // find the bump to sign with the pda
         let bump = &[pocket.bump][..];
@@ -68,7 +68,7 @@ impl<'info> WithdrawContext<'info> {
                 self.token_program.to_account_info(),
                 Transfer {
                     from: pocket_quote_token_vault.to_account_info(),
-                    to: signer_target_token_vault.to_account_info(),
+                    to: signer_quote_token_vault.to_account_info(),
                     authority: pocket.to_account_info(),
                 },
                 signer,
