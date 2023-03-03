@@ -11,14 +11,14 @@ pub struct ExecuteSwapContext<'info> {
 
     /// CHECK: skip verification
     #[account(
-    mut,
-    address = pocket.market_key,
+        mut,
+        address = pocket.market_key,
     )]
     pub market_key: AccountInfo<'info>,
 
     #[account(
-    seeds = [PLATFORM_SEED],
-    bump = pocket_registry.bump,
+        seeds = [PLATFORM_SEED],
+        bump = pocket_registry.bump,
     )]
     pub pocket_registry: Account<'info, PocketPlatformRegistry>,
 
@@ -38,7 +38,195 @@ pub struct ExecuteSwapContext<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handle_execute_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
+impl<'info> ExecuteSwapContext<'info> {
+    pub fn ensure_pocket_integrity(&mut self, did_swap: &DidSwap) -> Result<()> {
+        // Validate if the swap matched price condition
+        self.check_for_swap_possibility(did_swap).unwrap();
+
+        // Update pocket balance
+        self.update_pocket_info(did_swap).unwrap();
+
+        // Update Pocket status if matches stop condition
+        self.update_pocket_status().unwrap();
+
+        Ok(())
+    }
+
+    fn update_pocket_info(&mut self, swap_data: &DidSwap) -> Result<()> {
+        let did_swap = swap_data.clone();
+        let pocket = &mut self.pocket;
+
+        // Update pocket balance
+        match pocket.side {
+            TradeSide::Buy => {
+                pocket.base_token_balance = pocket.base_token_balance + did_swap.to_amount;
+                pocket.quote_token_balance = pocket.quote_token_balance - did_swap.from_amount;
+            }
+
+            TradeSide::Sell => {
+                pocket.base_token_balance = pocket.base_token_balance - did_swap.from_amount;
+                pocket.quote_token_balance = pocket.quote_token_balance + did_swap.to_amount;
+            }
+        }
+
+        // Update pocket info
+        pocket.next_scheduled_execution_at = Clock::get().unwrap().unix_timestamp as u64 + pocket.frequency.hours.saturating_mul(3600);
+        pocket.executed_batch_amount = pocket.executed_batch_amount + 1;
+
+        Ok(())
+    }
+
+    fn update_pocket_status(&mut self) -> Result<()> {
+        let mut should_stop = false;
+        let pocket = &mut self.pocket;
+
+        for condition in pocket.stop_conditions.clone() {
+            match condition {
+                StopCondition::EndTimeReach { value, .. } => {
+                    if value <= Clock::get().unwrap().unix_timestamp as u64 {
+                        should_stop = true;
+                        break;
+                    }
+                }
+
+                StopCondition::BaseTokenAmountReach { value,.. } => {
+                    if value <= pocket.base_token_balance {
+                        should_stop = true;
+                        break;
+                    }
+                }
+
+                StopCondition::QuoteTokenAmountReach { value, .. } => {
+                    if value <= pocket.quote_token_balance {
+                        should_stop = true;
+                        break;
+                    }
+                }
+
+                StopCondition::SpentBaseTokenAmountReach { value, .. } => {
+                    if value <= pocket.total_base_deposit_amount.saturating_sub(pocket.base_token_balance) {
+                        should_stop = true;
+                        break;
+                    }
+                }
+
+                StopCondition::SpentQuoteTokenAmountReach { value, .. } => {
+                    if value <= pocket.total_quote_deposit_amount.saturating_sub(pocket.quote_token_balance) {
+                        should_stop = true;
+                        break;
+                    }
+                }
+
+                StopCondition::BatchAmountReach { value, .. } => {
+                    if value <= pocket.executed_batch_amount {
+                        should_stop = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Force close pocket
+        if should_stop {
+            pocket.status = PocketStatus::Closed;
+        }
+
+        // Emit event
+        pocket_emit!(PocketUpdated {
+            actor: self.signer.key(),
+            pocket_address: pocket.key(),
+            status: pocket.status,
+            memo: String::from("STOP_CONDITION_REACHED")
+        });
+
+        Ok(())
+    }
+
+    fn check_for_swap_possibility(&self, swap_data: &DidSwap) -> Result<()> {
+        let did_swap = swap_data.clone();
+        let pocket = &self.pocket;
+
+        // Must match the next scheduled date and start date
+        assert_eq!(
+            pocket.is_ready_to_swap(),
+            true,
+            "NOT_READY_TO_SWAP"
+        );
+
+        // Check for buy condition
+        match pocket.buy_condition.clone() {
+            None => {}
+
+            Some(PriceCondition::Bw { from_value, to_value }) => {
+                assert_eq!(
+                    did_swap.to_amount <= to_value && did_swap.to_amount >= from_value,
+                    true,
+                    "BUY_CONDITION_NOT_FULFILLED"
+                );
+            }
+
+            Some(PriceCondition::Nbw { from_value, to_value }) => {
+                assert_eq!(
+                    did_swap.to_amount <= to_value && did_swap.to_amount >= from_value,
+                    false,
+                    "BUY_CONDITION_NOT_FULFILLED"
+                );
+            }
+
+            Some(PriceCondition::Gt { value }) => {
+                assert_eq!(
+                    did_swap.to_amount > value,
+                    true,
+                    "BUY_CONDITION_NOT_FULFILLED"
+                );
+            }
+
+            Some(PriceCondition::Gte { value }) => {
+                assert_eq!(
+                    did_swap.to_amount >= value,
+                    true,
+                    "BUY_CONDITION_NOT_FULFILLED"
+                );
+            }
+
+            Some(PriceCondition::Lt { value }) => {
+                assert_eq!(
+                    did_swap.to_amount < value,
+                    true,
+                    "BUY_CONDITION_NOT_FULFILLED"
+                );
+            }
+
+            Some(PriceCondition::Lte { value }) => {
+                assert_eq!(
+                    did_swap.to_amount <= value,
+                    true,
+                    "BUY_CONDITION_NOT_FULFILLED"
+                );
+            }
+
+            Some(PriceCondition::Eq { value }) => {
+                assert_eq!(
+                    did_swap.to_amount == value,
+                    true,
+                    "BUY_CONDITION_NOT_FULFILLED"
+                );
+            }
+
+            Some(PriceCondition::Neq { value }) => {
+                assert_eq!(
+                    did_swap.to_amount != value,
+                    true,
+                    "BUY_CONDITION_NOT_FULFILLED"
+                );
+            }
+        }
+
+        Ok(())
+    }
+}
+
+pub fn handle_execute_swap<'info>(ctx: Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
     let pocket_registry = ctx.accounts.pocket_registry.clone();
     let pocket = ctx.accounts.pocket.clone();
     let signer = ctx.accounts.signer.clone();
@@ -53,16 +241,18 @@ pub fn handle_execute_swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapCo
         return Err(PocketError::NotReadyToSwap.into());
     }
 
-    // TODO: check for buy condition
-
     // Make Swap
-    swap(&ctx).unwrap();
+    let did_swap = swap(&ctx).unwrap();
 
+    // Pocket risk check and update
+    ctx.accounts.ensure_pocket_integrity(&did_swap).unwrap();
+
+    // Return result
     Ok(())
 }
 
-fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<()> {
-    let pocket = ctx.accounts.pocket.clone();
+fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> Result<DidSwap> {
+    let pocket = &ctx.accounts.pocket;
 
     // Determine side
     let mut side = Side::Ask;
@@ -112,87 +302,6 @@ fn swap<'info>(ctx: &Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>) -> R
         strict: false,
     }).unwrap();
 
-    // Validate buy condition
-    validate_buy_condition(&pocket, &did_swap).unwrap();
-
-    // TODO: update pocket statistic (next scheduled time, balance ...)
-
-    // TODO: Auto close the pocket if stop condition reached
-
-    Ok(())
-}
-
-fn validate_buy_condition(pocket: &Pocket, swap_data: &DidSwap) -> Result<()> {
-    let did_swap = swap_data.clone();
-
-    // Check for buy condition
-    match pocket.buy_condition.clone() {
-        None => {}
-
-        Some(PriceCondition::Bw { from_value, to_value }) => {
-            assert_eq!(
-                did_swap.to_amount <= to_value && did_swap.to_amount >= from_value,
-                true,
-                "EXCHANGE_RATE_NOT_FULFILLED"
-            );
-        }
-
-        Some(PriceCondition::Nbw { from_value, to_value }) => {
-            assert_eq!(
-                did_swap.to_amount <= to_value && did_swap.to_amount >= from_value,
-                false,
-                "EXCHANGE_RATE_NOT_FULFILLED"
-            );
-        }
-
-        Some(PriceCondition::Gt { value }) => {
-            assert_eq!(
-                did_swap.to_amount > value,
-                true,
-                "EXCHANGE_RATE_NOT_FULFILLED"
-            );
-        }
-
-        Some(PriceCondition::Gte { value }) => {
-            assert_eq!(
-                did_swap.to_amount >= value,
-                true,
-                "EXCHANGE_RATE_NOT_FULFILLED"
-            );
-        }
-
-        Some(PriceCondition::Lt { value }) => {
-            assert_eq!(
-                did_swap.to_amount < value,
-                true,
-                "EXCHANGE_RATE_NOT_FULFILLED"
-            );
-        }
-
-        Some(PriceCondition::Lte { value }) => {
-            assert_eq!(
-                did_swap.to_amount <= value,
-                true,
-                "EXCHANGE_RATE_NOT_FULFILLED"
-            );
-        }
-
-        Some(PriceCondition::Eq { value }) => {
-            assert_eq!(
-                did_swap.to_amount == value,
-                true,
-                "EXCHANGE_RATE_NOT_FULFILLED"
-            );
-        }
-
-        Some(PriceCondition::Neq { value }) => {
-            assert_eq!(
-                did_swap.to_amount != value,
-                true,
-                "EXCHANGE_RATE_NOT_FULFILLED"
-            );
-        }
-    }
-
-    Ok(())
+    // Return
+    Ok(did_swap)
 }

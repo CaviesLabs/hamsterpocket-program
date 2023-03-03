@@ -92,7 +92,17 @@ pub enum StopCondition {
         value: u64
     },
 
-    TargetTokenAmountReach {
+    QuoteTokenAmountReach {
+        is_primary: bool,
+        value: u64
+    },
+
+    SpentBaseTokenAmountReach {
+        is_primary: bool,
+        value: u64
+    },
+
+    SpentQuoteTokenAmountReach {
         is_primary: bool,
         value: u64
     },
@@ -114,13 +124,24 @@ impl StopCondition {
             StopCondition::EndTimeReach { value, .. } => {
                 value.clone() > 0
             },
+
             StopCondition::BaseTokenAmountReach { value,  ..  } => {
                 value.clone() > 0
             },
-            StopCondition::TargetTokenAmountReach { value,  ..  } => {
+
+            StopCondition::QuoteTokenAmountReach { value,  ..  } => {
                 value.clone() > 0
             },
+
             StopCondition::BatchAmountReach { value,  ..  } => {
+                value.clone() > 0
+            }
+
+            StopCondition::SpentBaseTokenAmountReach { value, .. } => {
+                value.clone() > 0
+            }
+
+            StopCondition::SpentQuoteTokenAmountReach { value, .. } => {
                 value.clone() > 0
             }
         }
@@ -132,13 +153,24 @@ impl StopCondition {
             StopCondition::EndTimeReach { is_primary, .. } => {
                 *is_primary == true
             },
+
             StopCondition::BaseTokenAmountReach { is_primary,  ..  } => {
                 *is_primary == true
             },
-            StopCondition::TargetTokenAmountReach { is_primary,  ..  } => {
+
+            StopCondition::QuoteTokenAmountReach { is_primary,  ..  } => {
                 *is_primary == true
             },
+
             StopCondition::BatchAmountReach { is_primary,  ..  } => {
+                *is_primary == true
+            }
+
+            StopCondition::SpentBaseTokenAmountReach { is_primary,.. } => {
+                *is_primary == true
+            }
+
+            StopCondition::SpentQuoteTokenAmountReach { is_primary, .. } => {
                 *is_primary == true
             }
         }
@@ -147,7 +179,7 @@ impl StopCondition {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
 pub struct DateDuration {
-    hours: u64,
+    pub(crate) hours: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
@@ -162,7 +194,7 @@ pub enum MainProgressBy {
     #[default]
     EndTimeReach,
     BaseTokenAmountReach,
-    TargetTokenAmountReach,
+    QuoteTokenAmountReach,
     BatchAmountReach
 }
 
@@ -206,7 +238,7 @@ pub struct Pocket {
     pub base_token_mint_address: Pubkey,
 
     // Define target token
-    pub target_token_mint_address: Pubkey,
+    pub quote_token_mint_address: Pubkey,
 
     // Define the associated market
     pub market_key: Pubkey,
@@ -230,13 +262,16 @@ pub struct Pocket {
     pub frequency: DateDuration,
 
     // Show total deposited base token balance
-    pub total_deposit_amount: u64,
+    pub total_base_deposit_amount: u64,
+
+    // Show total quote deposited amount
+    pub total_quote_deposit_amount: u64,
 
     // Show base token balance
     pub base_token_balance: u64,
 
     // Show target token balance
-    pub target_token_balance: u64,
+    pub quote_token_balance: u64,
 
     // Show batch amount
     pub executed_batch_amount: u64,
@@ -273,38 +308,40 @@ impl Pocket {
 
     // Check whether the pocket is able to swap
     pub fn is_ready_to_swap(&self) -> bool {
-        return self.status == PocketStatus::Active && self.start_at >= Clock::get().unwrap().unix_timestamp as u64
+        return self.status == PocketStatus::Active
+            && self.start_at <= Clock::get().unwrap().unix_timestamp as u64
+            && self.next_scheduled_execution_at <= Clock::get().unwrap().unix_timestamp as u64
     }
 
     // Check whether the pocket data is valid
     pub fn validate_pocket_data(&self) -> Result<()> {
         let pocket = self.clone();
 
-        assert_ne!(pocket.name, String::default(), "Must initialize pocket name");
-        assert_ne!(pocket.id, String::default(), "Pocket Id is not valid");
+        assert_ne!(pocket.name, String::default(), "POCKET_NAME_IS_NOT_VALID");
+        assert_ne!(pocket.id, String::default(), "POCKET_ID_IS_NOT_VALID");
 
-        assert_ne!(pocket.owner, Pubkey::default(), "Owner is not valid");
-        assert_ne!(pocket.base_token_mint_address, Pubkey::default(), "Not valid pubkey");
-        assert_ne!(pocket.target_token_mint_address, Pubkey::default(), "Not valid pubkey");
+        assert_ne!(pocket.owner, Pubkey::default(), "OWNER_IS_NOT_VALID");
+        assert_ne!(pocket.base_token_mint_address, Pubkey::default(), "BASE_MINT_IS_NOT_VALID");
+        assert_ne!(pocket.quote_token_mint_address, Pubkey::default(), "TARGET_MINT_IS_NOT_VALID");
 
-        assert_eq!(pocket.start_at >= Clock::get().unwrap().unix_timestamp as u64, true, "Not valid timestamp");
-        assert_eq!(pocket.frequency.hours > 0, true, "Not valid frequency");
-        assert_eq!(pocket.batch_volume > 0, true, "Not valid batch volume");
+        assert_eq!(pocket.start_at >= Clock::get().unwrap().unix_timestamp as u64, true, "TIMESTAMP_IS_NOT_VALID");
+        assert_eq!(pocket.frequency.hours > 0, true, "FREQUENCY_IS_NOT_VALID");
+        assert_eq!(pocket.batch_volume > 0, true, "BATCH_VOLUME_IS_NOT_VALID");
 
         if pocket.buy_condition.unwrap_or(PriceCondition::default()) != PriceCondition::default() {
-            assert_eq!(PriceCondition::is_valid(&pocket.buy_condition.unwrap()), true, "Not valid buy condition");
+            assert_eq!(PriceCondition::is_valid(&pocket.buy_condition.unwrap()), true, "BUY_CONDITION_IS_NOT_VALID");
         }
 
         let mut primary_count = 0;
 
         for x in pocket.stop_conditions {
-            assert_eq!(StopCondition::is_valid(&x), true, "Not valid stop condition");
+            assert_eq!(StopCondition::is_valid(&x), true, "STOP_CONDITION_IS_NOT_VALID");
             if StopCondition::is_primary(&x) {
                 primary_count = primary_count + 1;
             }
         }
 
-        assert_eq!(primary_count <= 1, true, "Can just set 1 primary condition");
+        assert_eq!(primary_count <= 1, true, "PRIMARY_CONDITION_DUPLICATED");
 
         Ok(())
     }

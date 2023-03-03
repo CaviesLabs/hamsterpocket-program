@@ -45,10 +45,11 @@ pub struct PocketCreated {
 #[event]
 pub struct PocketUpdated {
     #[index]
-    pub owner: Pubkey,
+    pub actor: Pubkey,
     #[index]
     pub pocket_address: Pubkey,
-    pub status: PocketStatus
+    pub status: PocketStatus,
+    pub memo: String
 }
 
 /// Emitted when a [PocketDeposited] is created.
@@ -74,7 +75,7 @@ pub struct PocketWithdrawn {
     pub base_token_mint_address: Pubkey,
     pub base_token_amount: u64,
     #[index]
-    pub target_token_mint_address: Pubkey,
+    pub quote_token_mint_address: Pubkey,
     pub target_token_amount: u64
 }
 

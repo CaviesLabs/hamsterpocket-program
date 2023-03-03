@@ -31,19 +31,19 @@ impl<'info> UpdatePocketContext<'info> {
 
         match params.status {
             PocketStatus::Active => {
-                assert_eq!(pocket.is_able_to_restart(), true, "Cannot restart the pocket");
+                assert_eq!(pocket.is_able_to_restart(), true, "COULD_NOT_RESTART_POCKET");
             },
 
             PocketStatus::Paused => {
-                assert_eq!(pocket.is_able_to_pause(), true, "Cannot pause the pocket");
+                assert_eq!(pocket.is_able_to_pause(), true, "COULD_NOT_PAUSE_POCKET");
             },
 
             PocketStatus::Closed => {
-                assert_eq!(pocket.is_able_to_close(), true, "Cannot close the pocket");
+                assert_eq!(pocket.is_able_to_close(), true, "COULD_NOT_CLOSE_POCKET");
             },
 
             PocketStatus::Withdrawn => {
-                assert_eq!(1, 0, "Invalid input");
+                assert_eq!(1, 0, "INVALID_INPUT");
             }
         }
 
@@ -51,9 +51,10 @@ impl<'info> UpdatePocketContext<'info> {
 
         pocket_emit!(
             PocketUpdated {
-                owner: pocket.owner,
+                actor: self.signer.key(),
                 pocket_address: pocket.key(),
                 status: pocket.status,
+                memo: String::from("USER_UPDATED_POCKET")
             }
         );
 

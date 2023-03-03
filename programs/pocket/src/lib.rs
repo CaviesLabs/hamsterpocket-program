@@ -156,7 +156,7 @@ pub mod pocket {
         ctx: Context<'_, '_, '_, 'info, ExecuteSwapContext<'info>>
     ) -> Result<()> {
         // process
-        handle_execute_swap(&ctx).unwrap();
+        handle_execute_swap(ctx).unwrap();
 
         // Program result should be ok.
         Ok(())

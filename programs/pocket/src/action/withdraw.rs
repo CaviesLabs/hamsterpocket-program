@@ -78,7 +78,7 @@ impl<'info> WithdrawContext<'info> {
 
         // update credited balance
         pocket.base_token_balance = 0;
-        pocket.target_token_balance = 0;
+        pocket.quote_token_balance = 0;
 
         // emit event
         pocket_emit!(
@@ -87,7 +87,7 @@ impl<'info> WithdrawContext<'info> {
                pocket_address: pocket.key(),
                base_token_mint_address: pocket.base_token_mint_address,
                base_token_amount: self.pocket_base_token_vault.amount,
-               target_token_mint_address: pocket.target_token_mint_address,
+               quote_token_mint_address: pocket.quote_token_mint_address,
                target_token_amount: self.pocket_target_token_vault.amount
             }
         );
