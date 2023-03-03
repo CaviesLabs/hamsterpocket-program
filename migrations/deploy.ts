@@ -198,7 +198,7 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     pocket: pocketAccount,
     pocketRegistry,
     pocketBaseTokenVault: baseMintVaultAccount,
-    pocketTargetTokenVault: targetMintVaultAccount,
+    pocketQuoteTokenVault: targetMintVaultAccount,
   })
     .preInstructions(initInx)
     // .postInstructions(cleanUpInx)
@@ -271,6 +271,11 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
     deployer.publicKey
   )
 
+  const ownerTargetTokenAccount = await getAssociatedTokenAddress(
+    targetMintAccount,
+    deployer.publicKey
+  )
+
   await closeAccount(
     provider.connection,
     deployer.payer,
@@ -316,28 +321,31 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
 
     await program.methods
       .deposit({
-        depositAmount: new anchor.BN(LAMPORTS_PER_SOL * 0.5)
+        depositAmount: new anchor.BN(LAMPORTS_PER_SOL * 0.5),
+        mode: {base: {}}
       })
       .accounts({
         signer: deployer.publicKey,
         pocket: pocketAccount,
         pocketBaseTokenVault: baseMintVaultAccount,
-        signerTokenAccount: ownerBaseTokenAccount
+        pocketQuoteTokenVault: targetMintVaultAccount,
+        signerBaseTokenAccount: ownerBaseTokenAccount,
+        signerQuoteTokenAccount: ownerTargetTokenAccount
       }).instruction()
   ];
 
   const pocketData = {
     id: pocketId,
     side: { sell: {} },
-    targetTokenAddress: baseMintAccount,
-    baseTokenAddress: targetMintAccount,
-    stopConditions: [],
+    baseTokenAddress: baseMintAccount,
+    quoteTokenAddress: targetMintAccount,
     marketKey: new PublicKey(marketSOLUSDT.marketId),
+    stopConditions: [],
     buyCondition: null,
     startAt: new anchor.BN(new Date().getTime().toString()),
     batchVolume: new anchor.BN((LAMPORTS_PER_SOL * 0.1).toString()),
     name: "pocket name",
-    frequency: { hours: new anchor.BN(1) }
+    frequency: { hours: new anchor.BN(1) },
   };
 
   await program.methods
@@ -416,7 +424,7 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
       signer: deployer.publicKey,
       pocket: pocketAccount,
       pocketBaseTokenVault: baseMintVaultAccount,
-      pocketTargetTokenVault: targetMintVaultAccount,
+      pocketQuoteTokenVault: targetMintVaultAccount,
       signerBaseTokenAccount: ownerBaseTokenAccount.address,
       signerTargetTokenAccount: ownerTargetTokenAccount.address
     })
@@ -435,14 +443,11 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
 }
 
 module.exports = async function(provider: AnchorProvider) {
-  const fixtures = await getFixtures(provider, {
-    pocketId: "2mdxaksM8iDBGtvtwHZHZTH4"
-  });
-
+  const fixtures = await getFixtures(provider);
 
   // await initializeAccount(provider, fixtures);
   // await addOperator(provider, fixtures);
-  // await createPocket(provider, fixtures);
+  await createPocket(provider, fixtures);
   // await executeSwap(provider, fixtures);
-  await cancelAndWithdraw(provider, fixtures);
+  // await cancelAndWithdraw(provider, fixtures);
 };
