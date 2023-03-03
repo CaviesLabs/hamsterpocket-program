@@ -4,19 +4,22 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
-import { IDL } from "../target/types/pocket";
 
 import * as anchor from "@project-serum/anchor";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { Market, OpenOrders } from "@openbook-dex/openbook";
 import { AnchorProvider } from "@project-serum/anchor/dist/cjs/provider";
-import { BorshCoder, EventParser } from "@project-serum/anchor";
+import { BorshCoder, EventParser, IdlTypes } from "@project-serum/anchor";
+
+import { IDL, Pocket } from "../target/types/pocket";
+
 
 import {
   closeAccount, createAssociatedTokenAccountInstruction, createCloseAccountInstruction, createSyncNativeInstruction,
   createWrappedNativeAccount, getAccount, getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount, NATIVE_MINT
 } from "@solana/spl-token";
 
+type ProgramPocketTypes = IdlTypes<Pocket>;
 
 type Fixtures = Awaited<ReturnType<typeof getFixtures>>;
 
@@ -218,7 +221,7 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     // .simulate({ commitment: "confirmed" })
     .catch(e => console.log(e));
   //
-  // expect log
+  // // expect log
   const transaction = await provider.connection.getParsedTransaction(txId as string, {
     commitment: "confirmed"
   });
@@ -334,15 +337,25 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
       }).instruction()
   ];
 
-  const pocketData = {
+  const pocketData: ProgramPocketTypes['CreatePocketParams'] = {
     id: pocketId,
     side: { sell: {} },
     baseTokenAddress: baseMintAccount,
     quoteTokenAddress: targetMintAccount,
     marketKey: new PublicKey(marketSOLUSDT.marketId),
-    stopConditions: [],
-    buyCondition: null,
-    startAt: new anchor.BN(new Date().getTime().toString()),
+    stopConditions: [{
+      batchAmountReach: {
+        value: new anchor.BN("1"),
+        // @ts-ignore
+        isPrimary: true
+      }
+    }],
+    buyCondition: {
+      gte: {
+        value: new anchor.BN("2000000")
+      }
+    },
+    startAt: new anchor.BN(parseInt(String(new Date().getTime() / 1000 + 10))),
     batchVolume: new anchor.BN((LAMPORTS_PER_SOL * 0.1).toString()),
     name: "pocket name",
     frequency: { hours: new anchor.BN(1) },
@@ -443,11 +456,15 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
 }
 
 module.exports = async function(provider: AnchorProvider) {
-  const fixtures = await getFixtures(provider);
+  const fixtures = await getFixtures(provider, {
+    pocketId: "qFgBEaebJGH5fvvJCYKDVhqh"
+  });
 
+  // const pocket = await fixtures.program.account.pocket.fetch(fixtures.pocketAccount);
+  // console.log(pocket.stopConditions);
   // await initializeAccount(provider, fixtures);
   // await addOperator(provider, fixtures);
-  await createPocket(provider, fixtures);
+  // await createPocket(provider, fixtures);
   // await executeSwap(provider, fixtures);
-  // await cancelAndWithdraw(provider, fixtures);
+  await cancelAndWithdraw(provider, fixtures);
 };
