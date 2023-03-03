@@ -189,15 +189,6 @@ pub enum TradeSide {
     Sell
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
-pub enum MainProgressBy {
-    #[default]
-    EndTimeReach,
-    BaseTokenAmountReach,
-    QuoteTokenAmountReach,
-    BatchAmountReach
-}
-
 // ================ Pocket Option Interface ================ //
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy, Debug, PartialEq)]
 pub enum PocketStatus {
