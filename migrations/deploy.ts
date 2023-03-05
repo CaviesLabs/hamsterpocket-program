@@ -374,7 +374,7 @@ const addOperator = async (provider: AnchorProvider, fixtures: Fixtures) => {
     deployer
   } = fixtures;
 
-  const operator = deployer.publicKey;
+  const operator = new PublicKey("HdWkKSDM2UDdtbiwh2fAHunyDckEnZde6mehYMH2hiBq");
 
   await program.methods.updatePocketRegistry({
     operators: [operator]
@@ -446,9 +446,7 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
 }
 
 module.exports = async function(provider: AnchorProvider) {
-  const fixtures = await getFixtures(provider, {
-    pocketId: "qFgBEaebJGH5fvvJCYKDVhqh"
-  });
+  const fixtures = await getFixtures(provider);
 
   // const pocket = await fixtures.program.account.pocket.fetch(fixtures.pocketAccount);
   // console.log(pocket.stopConditions);
@@ -456,5 +454,5 @@ module.exports = async function(provider: AnchorProvider) {
   // await addOperator(provider, fixtures);
   // await createPocket(provider, fixtures);
   // await executeSwap(provider, fixtures);
-  await cancelAndWithdraw(provider, fixtures);
+  // await cancelAndWithdraw(provider, fixtures);
 };
