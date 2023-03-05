@@ -73,23 +73,20 @@ $ anchor test --skip-local-validator
 ```
 
 ```txt
-  ✔ [initialize_swap_program] should: deployer initializes swap registry successfully
-  ✔ [initialize_swap_program] should: deployer fails to re-initialize the swap registry
-  ✔ [update_swap_program] should: deployer updates registry successfully (443ms)
-  ✔ [update_swap_program] should: non-owner fails to modify the swap program
-  ✔ [update_swap_program] should: deployer fails to update invalid values
-  ✔ [create_token_vault] should: non-deployer fails to create a token vault
-  ✔ [create_token_vault] should: deployer creates a token vault successfully (446ms)
-  ✔ [create_token_vault] should: deployer fails to create a token vault for an added mint account
-  ✔ [create_proposal] should: fail to create proposal with un-allowed mint tokens
-  ✔ [create_proposal] should: everyone can create publicly a proposal (964ms)
-  ✔ [cancel_proposal] should: participants can cancel proposal anytime when proposal isn't fulfilled (930ms)
-  ✔ [withdraw_assets] should: participant can withdraw assets when proposal is canceled (452ms)
-  ✔ [deposit_assets] should: proposal owner deposits offered items successfully (491ms)
-  ✔ [fulfil_assets] should: participant fulfill proposal successfully (447ms)
-  ✔ [redeem_assets] should: proposal owner can redeem items once the proposal is fulfilled (459ms)
-  ✔ [redeem_assets] should: participant can redeem items once the proposal is fulfilled (461ms)
+   pocket_registry
+    ✔ [initialize_swap_program] should: deployer initializes pocket registry successfully
+    ✔ [initialize_swap_program] should: deployer fails to re-initialize the pocket registry
+    ✔ [update_operator] should: deployer can update operators list (453ms)
 
-  16 passing (12s)
+  pocket
+    ✔ [create_pocket] should: anyone can create their pocket (477ms)
+    ✔ [create_token_vault] should: pocket owner can create token vault successfully (473ms)
+    ✔ [pause_pocket] should: owner should pause pocket successfully (469ms)
+    ✔ [pause_pocket] should: owner should not pause pocket that was already paused
+    ✔ [restart_pocket] should: owner can restart the paused pocket successfully (436ms)
+    ✔ [close_pocket] should: owner can close pocket successfully (470ms)
 
+  assets
+    ✔ [deposit] should: owner can deposit assets to pocket successfully (485ms)
+    ✔ [withdraw] should: owner can withdraw assets from pocket successfully (935ms)
 ```
