@@ -6,7 +6,7 @@ require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 
 import * as anchor from "@project-serum/anchor";
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { Market, OpenOrders } from "@openbook-dex/openbook";
 import { AnchorProvider } from "@project-serum/anchor/dist/cjs/provider";
 import { BorshCoder, EventParser, IdlTypes } from "@project-serum/anchor";
@@ -131,15 +131,7 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     deployer,
   } = fixtures;
 
-  const pocket = await program.account.pocket.fetch(pocketAccount);
-  console.log({pocket});
-
   const operator = deployer.publicKey;
-  const poolVault = await getAccount(
-    provider.connection,
-    baseMintVaultAccount
-  );
-  console.log({poolVault});
 
   let marketAddress = new PublicKey(marketSOLUSDT.marketId);
   let programAddress = new PublicKey(marketSOLUSDT.marketProgramId);
@@ -204,7 +196,6 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     pocketQuoteTokenVault: targetMintVaultAccount,
   })
     .preInstructions(initInx)
-    // .postInstructions(cleanUpInx)
     .remainingAccounts([
     // serum dex accounts
     {pubkey: market.decoded.eventQueue, isSigner: false, isWritable: true},
@@ -218,7 +209,6 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     {pubkey: programAddress, isSigner: false, isWritable: false},
   ]).signers([deployer.payer])
     .rpc({ commitment: "confirmed" })
-    // .simulate({ commitment: "confirmed" })
     .catch(e => console.log(e));
   //
   // // expect log
