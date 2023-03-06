@@ -4,23 +4,24 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
-
-import * as anchor from "@project-serum/anchor";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { Market, OpenOrders } from "@openbook-dex/openbook";
+
+import {
+  closeAccount,
+  createAssociatedTokenAccountInstruction,
+  createCloseAccountInstruction,
+  createSyncNativeInstruction,
+  getAssociatedTokenAddress,
+  getOrCreateAssociatedTokenAccount,
+  NATIVE_MINT
+} from "@solana/spl-token";
+import * as anchor from "@project-serum/anchor";
 import { AnchorProvider } from "@project-serum/anchor/dist/cjs/provider";
 import { BorshCoder, EventParser, IdlTypes } from "@project-serum/anchor";
 
 import { IDL, Pocket } from "../target/types/pocket";
-
-
-import {
-  closeAccount, createAssociatedTokenAccountInstruction, createCloseAccountInstruction, createSyncNativeInstruction,
-  createWrappedNativeAccount, getAccount, getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount, NATIVE_MINT
-} from "@solana/spl-token";
-
 type ProgramPocketTypes = IdlTypes<Pocket>;
-
 type Fixtures = Awaited<ReturnType<typeof getFixtures>>;
 
 // https://api.raydium.io/v2/sdk/liquidity/mainnet.json
@@ -128,7 +129,7 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     targetMintVaultAccount,
     pocketRegistry,
     program,
-    deployer,
+    deployer
   } = fixtures;
 
   const operator = deployer.publicKey;
@@ -147,7 +148,7 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
 
   const initInx = [];
 
-  if(!await provider.connection.getAccountInfo(desiredOpenOrderAccount)) {
+  if (!await provider.connection.getAccountInfo(desiredOpenOrderAccount)) {
     initInx.push(
       SystemProgram.createAccountWithSeed({
         basePubkey: deployer.publicKey,
@@ -169,9 +170,10 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
         openOrders: desiredOpenOrderAccount,
         dexProgram: programAddress,
         pocket: pocketAccount
-      }).instruction(),
-    )
-  };
+      }).instruction()
+    );
+  }
+  ;
 
   const cleanUpInx = [];
 
@@ -184,7 +186,7 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
       dexProgram: programAddress,
       pocket: pocketAccount
     }).instruction()
-  )
+  );
 
   const txId = await program.methods.executeSwap().accounts({
     // pocket accounts
@@ -193,21 +195,21 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
     pocket: pocketAccount,
     pocketRegistry,
     pocketBaseTokenVault: baseMintVaultAccount,
-    pocketQuoteTokenVault: targetMintVaultAccount,
+    pocketQuoteTokenVault: targetMintVaultAccount
   })
     .preInstructions(initInx)
     .remainingAccounts([
-    // serum dex accounts
-    {pubkey: market.decoded.eventQueue, isSigner: false, isWritable: true},
-    {pubkey: market.decoded.requestQueue, isSigner: false, isWritable: true},
-    {pubkey: market.decoded.bids, isSigner: false, isWritable: true},
-    {pubkey: market.decoded.asks, isSigner: false, isWritable: true},
-    {pubkey: market.decoded.baseVault, isSigner: false, isWritable: true},
-    {pubkey: market.decoded.quoteVault, isSigner: false, isWritable: true},
-    {pubkey: new PublicKey(marketSOLUSDT.marketAuthority), isSigner: false, isWritable: false},
-    {pubkey: desiredOpenOrderAccount, isSigner: false, isWritable: true},
-    {pubkey: programAddress, isSigner: false, isWritable: false},
-  ]).signers([deployer.payer])
+      // serum dex accounts
+      { pubkey: market.decoded.eventQueue, isSigner: false, isWritable: true },
+      { pubkey: market.decoded.requestQueue, isSigner: false, isWritable: true },
+      { pubkey: market.decoded.bids, isSigner: false, isWritable: true },
+      { pubkey: market.decoded.asks, isSigner: false, isWritable: true },
+      { pubkey: market.decoded.baseVault, isSigner: false, isWritable: true },
+      { pubkey: market.decoded.quoteVault, isSigner: false, isWritable: true },
+      { pubkey: new PublicKey(marketSOLUSDT.marketAuthority), isSigner: false, isWritable: false },
+      { pubkey: desiredOpenOrderAccount, isSigner: false, isWritable: true },
+      { pubkey: programAddress, isSigner: false, isWritable: false }
+    ]).signers([deployer.payer])
     .rpc({ commitment: "confirmed" })
     .catch(e => console.log(e));
   //
@@ -224,8 +226,8 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
   const events = eventParser.parseLogs(transaction.meta.logMessages);
 
 
-  for(let event of events) {
-    console.log(event.name, event.data)
+  for (let event of events) {
+    console.log(event.name, event.data);
   }
 };
 
@@ -262,12 +264,12 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
   const ownerBaseTokenAccount = await getAssociatedTokenAddress(
     NATIVE_MINT,
     deployer.publicKey
-  )
+  );
 
   const ownerTargetTokenAccount = await getAssociatedTokenAddress(
     targetMintAccount,
     deployer.publicKey
-  )
+  );
 
   await closeAccount(
     provider.connection,
@@ -315,7 +317,7 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
     await program.methods
       .deposit({
         depositAmount: new anchor.BN(LAMPORTS_PER_SOL * 0.5),
-        mode: {base: {}}
+        mode: { base: {} }
       })
       .accounts({
         signer: deployer.publicKey,
@@ -327,7 +329,7 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
       }).instruction()
   ];
 
-  const pocketData: ProgramPocketTypes['CreatePocketParams'] = {
+  const pocketData: ProgramPocketTypes["CreatePocketParams"] = {
     id: pocketId,
     side: { sell: {} },
     baseTokenAddress: baseMintAccount,
@@ -348,14 +350,14 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
     startAt: new anchor.BN(parseInt(String(new Date().getTime() / 1000 + 10))),
     batchVolume: new anchor.BN((LAMPORTS_PER_SOL * 0.1).toString()),
     name: "pocket name",
-    frequency: { hours: new anchor.BN(1) },
+    frequency: { hours: new anchor.BN(1) }
   };
 
   await program.methods
     .createPocket(pocketData)
     .accounts({
       pocket: pocketAccount,
-      signer: deployer.publicKey,
+      signer: deployer.publicKey
     })
     .postInstructions(inx)
     .signers([deployer.payer])
@@ -403,17 +405,17 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
     provider.connection,
     deployer.payer,
     baseMintAccount,
-    deployer.publicKey,
+    deployer.publicKey
   );
   const ownerTargetTokenAccount = await getOrCreateAssociatedTokenAccount(
     provider.connection,
     deployer.payer,
     targetMintAccount,
-    deployer.publicKey,
+    deployer.publicKey
   );
 
   inx.push(await program.methods.updatePocket({
-    status: {closed: {}}
+    status: { closed: {} }
   }).accounts({
     pocket: pocketAccount,
     signer: deployer.publicKey
@@ -441,8 +443,8 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
   await provider.sendAndConfirm(
     new Transaction().add(...inx),
     [deployer.payer]
-  ).catch(e=>console.log(e));
-}
+  ).catch(e => console.log(e));
+};
 
 module.exports = async function(provider: AnchorProvider) {
   const fixtures = await getFixtures(provider);
