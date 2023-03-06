@@ -14,7 +14,7 @@ pub struct ClosePocketAccountsContext<'info> {
     #[account(
         mut,
         constraint = pocket.owner == signer.key()
-        && pocket.status == PocketStatus::Closed @ PocketError::OnlyOwner,
+        && pocket.status == PocketStatus::Withdrawn @ PocketError::OnlyOwner,
         close = signer
     )]
     pub pocket: Account<'info, Pocket>,

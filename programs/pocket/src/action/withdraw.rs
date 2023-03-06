@@ -44,6 +44,11 @@ impl<'info> WithdrawContext<'info> {
         let signer_base_token_vault = &self.signer_base_token_account;
         let signer_quote_token_vault = &self.signer_quote_token_account;
 
+        // update credited balance & status
+        pocket.base_token_balance = 0;
+        pocket.quote_token_balance = 0;
+        pocket.status = PocketStatus::Withdrawn;
+
         // find the bump to sign with the pda
         let bump = &[pocket.bump][..];
         let signer = &[&[POCKET_SEED, pocket.id.as_bytes().as_ref(), bump][..]];
@@ -75,10 +80,6 @@ impl<'info> WithdrawContext<'info> {
             ),
             self.pocket_quote_token_vault.amount,
         ).unwrap();
-
-        // update credited balance
-        pocket.base_token_balance = 0;
-        pocket.quote_token_balance = 0;
 
         // emit event
         pocket_emit!(

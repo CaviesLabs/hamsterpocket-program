@@ -356,7 +356,6 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
     .accounts({
       pocket: pocketAccount,
       signer: deployer.publicKey,
-      pocketRegistry
     })
     .postInstructions(inx)
     .signers([deployer.payer])

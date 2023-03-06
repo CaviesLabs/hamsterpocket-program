@@ -181,6 +181,7 @@ describe("assets", async () => {
     expect(pocketState.totalQuoteDepositAmount.eq(new anchor.BN(LAMPORTS_PER_SOL * 0))).to.be.true;
     expect(pocketState.baseTokenBalance.eq(new anchor.BN(0))).to.be.true;
     expect(pocketState.quoteTokenBalance.eq(new anchor.BN(0))).to.be.true;
+    expect(!!pocketState.status.withdrawn).to.be.true;
 
     // expect log
     const transaction = await provider.connection.getParsedTransaction(txId as string, {
