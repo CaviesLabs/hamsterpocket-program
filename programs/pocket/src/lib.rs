@@ -112,6 +112,16 @@ pub mod pocket {
         Ok(())
     }
 
+    pub fn close_pocket_accounts(
+        ctx: Context<ClosePocketAccountsContext>,
+    ) -> Result<()> {
+        // process
+        ctx.accounts.execute().unwrap();
+
+        // Program result should be ok.
+        Ok(())
+    }
+
     pub fn init_swap_registry<'info>(
         ctx: Context<'_, '_, '_, 'info, InitAccount<'info>>
     ) -> Result<()> {

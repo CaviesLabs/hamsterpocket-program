@@ -2,7 +2,7 @@ import * as anchor from "@project-serum/anchor";
 import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 import { BorshCoder, EventParser } from "@project-serum/anchor";
-
+import { createCloseAccountInstruction } from "@solana/spl-token";
 
 import { getFixtures } from "./test.helper";
 
@@ -18,7 +18,6 @@ describe("assets", async () => {
     const {
       pocketId,
       program,
-      pocketRegistry,
       targetMintAccount,
       baseMintAccount,
       pocketAccount,
@@ -67,7 +66,6 @@ describe("assets", async () => {
       .accounts({
         pocket: pocketAccount,
         signer: owner.publicKey,
-        pocketRegistry,
       })
       .signers([owner])
       .postInstructions(inx)
@@ -153,18 +151,6 @@ describe("assets", async () => {
       provider
     } = fixtures;
 
-    await program.methods
-      .updatePocket({
-        status: { closed: {} },
-      })
-      .accounts({
-        signer: owner.publicKey,
-        pocket: pocketAccount,
-      })
-      .signers([owner])
-      .rpc({commitment: "confirmed"})
-      .catch((e) => console.log(e));
-
     const txId = await program.methods
       .withdraw()
       .accounts({
@@ -175,6 +161,17 @@ describe("assets", async () => {
         signerBaseTokenAccount: ownerBaseTokenAccount.address,
         signerQuoteTokenAccount: ownerTargetTokenAccount.address
       })
+      .preInstructions([
+        await program.methods
+          .updatePocket({
+            status: { closed: {} },
+          })
+          .accounts({
+            signer: owner.publicKey,
+            pocket: pocketAccount,
+          })
+          .instruction()
+      ])
       .signers([owner])
       .rpc({commitment: "confirmed"})
       .catch((e) => console.log(e));
@@ -194,7 +191,7 @@ describe("assets", async () => {
       program.programId,
       new BorshCoder(program.idl)
     );
-    const [event] = eventParser.parseLogs(transaction.meta.logMessages);
+    const [,event] = eventParser.parseLogs(transaction.meta.logMessages);
 
     // Expect emitted logs
     expect(event.name).eq("PocketWithdrawn");
@@ -218,6 +215,35 @@ describe("assets", async () => {
     expect(
       (event.data as any).quoteTokenAmount.eq(new anchor.BN(0))
     ).equals(true);
-  })
+  });
 
+  it("[close_pocket_accounts] should: owner should close pocket accounts and claim fee back successfully", async () => {
+    const {
+      program,
+      pocketAccount,
+      owner,
+      baseMintVaultAccount,
+      targetMintVaultAccount,
+      provider
+    } = fixtures;
+
+    const beforeClosedBalance = await provider.connection.getBalance(owner.publicKey);
+
+    await program.methods.closePocketAccounts().accounts({
+      signer: owner.publicKey,
+      pocket: pocketAccount,
+      pocketBaseTokenVault: baseMintVaultAccount,
+      pocketQuoteTokenVault: targetMintVaultAccount
+    })
+      .signers([owner])
+      .rpc({commitment: 'confirmed'})
+      .catch((e) => console.log(e));
+
+    const afterClosedBalance = await provider.connection.getBalance(owner.publicKey);
+
+    /**
+     * @dev Expect balance
+     */
+    expect(afterClosedBalance).gt(beforeClosedBalance);
+  });
 });

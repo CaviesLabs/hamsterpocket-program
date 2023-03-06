@@ -17,7 +17,6 @@ describe("pocket", async () => {
       provider,
       pocketId,
       program,
-      pocketRegistry,
       targetMintAccount,
       baseMintAccount,
       pocketAccount,
@@ -43,7 +42,6 @@ describe("pocket", async () => {
       .accounts({
         pocket: pocketAccount,
         signer: owner.publicKey,
-        pocketRegistry,
       })
       .signers([owner])
       .rpc({ commitment: "confirmed" })

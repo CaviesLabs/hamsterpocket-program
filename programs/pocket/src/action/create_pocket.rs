@@ -50,13 +50,6 @@ pub struct CreatePocketContext<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    #[account(
-        mut,
-        seeds = [PLATFORM_SEED],
-        bump = pocket_registry.bump,
-    )]
-    pub pocket_registry: Account<'info, PocketPlatformRegistry>,
-
     #[account(address = system_program::ID)]
     pub system_program: Program<'info, System>,
 

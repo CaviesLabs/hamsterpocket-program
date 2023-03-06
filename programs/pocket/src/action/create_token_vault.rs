@@ -7,6 +7,7 @@ pub struct CreateTokenVaultContext<'info> {
 
     #[account(
         seeds = [POCKET_SEED, pocket.id.as_bytes().as_ref()],
+        constraint = pocket.owner == signer.key() @ PocketError::OnlyOwner,
         bump = pocket.bump,
     )]
     pub pocket: Account<'info, Pocket>,
