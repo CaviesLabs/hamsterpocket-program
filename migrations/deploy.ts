@@ -447,13 +447,15 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
 };
 
 module.exports = async function(provider: AnchorProvider) {
-  const fixtures = await getFixtures(provider);
+  const fixtures = await getFixtures(provider, {
+    pocketId: "6405a8e649cfded6a9edd4ff"
+  });
 
   // const pocket = await fixtures.program.account.pocket.fetch(fixtures.pocketAccount);
   // console.log(pocket.stopConditions);
   // await initializeAccount(provider, fixtures);
   // await addOperator(provider, fixtures);
   // await createPocket(provider, fixtures);
-  // await executeSwap(provider, fixtures);
+  await executeSwap(provider, fixtures);
   // await cancelAndWithdraw(provider, fixtures);
 };

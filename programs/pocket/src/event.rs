@@ -78,11 +78,3 @@ pub struct PocketWithdrawn {
     pub quote_token_mint_address: Pubkey,
     pub quote_token_amount: u64
 }
-
-pub struct SwapExecuted {
-
-}
-
-pub struct SwapSkipped {
-
-}
