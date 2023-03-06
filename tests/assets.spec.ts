@@ -2,7 +2,6 @@ import * as anchor from "@project-serum/anchor";
 import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 import { BorshCoder, EventParser } from "@project-serum/anchor";
-import { createCloseAccountInstruction } from "@solana/spl-token";
 
 import { getFixtures } from "./test.helper";
 
