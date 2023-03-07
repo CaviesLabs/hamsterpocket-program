@@ -121,6 +121,7 @@ pub fn swap<'info>(
     let to_amount = to_amount_after.checked_sub(to_amount_before).unwrap();
 
     let did_swap_data = DidSwap {
+        pocket_address: ctx.pocket.key().clone(),
         authority: *ctx.authority.key,
         given_amount: amount,
         min_exchange_rate,
@@ -212,6 +213,7 @@ pub fn swap_transitive(
     let spill_amount = sell_proceeds.checked_sub(buy_proceeds).unwrap();
 
     let did_swap_data = DidSwap {
+        pocket_address: ctx.pocket.key().clone(),
         given_amount: amount,
         min_exchange_rate,
         from_amount,
@@ -735,6 +737,8 @@ fn _is_valid_swap<'info>(from: &AccountInfo<'info>, to: &AccountInfo<'info>) -> 
 #[event]
 #[derive(Clone, Copy)]
 pub struct DidSwap {
+    #[index]
+    pub pocket_address: Pubkey,
     // User given (max) amount  of the "from" token to swap.
     pub given_amount: u64,
     // The minimum exchange rate for swapping `from_amount` to `to_amount` in

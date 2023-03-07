@@ -451,11 +451,11 @@ module.exports = async function(provider: AnchorProvider) {
     pocketId: "6405a8e649cfded6a9edd4ff"
   });
 
-  // const pocket = await fixtures.program.account.pocket.fetch(fixtures.pocketAccount);
-  // console.log(pocket.stopConditions);
+  const pocket = await fixtures.program.account.pocket.fetch("DezKUnbp1wjQr9dxfdbUboAXfz6B1Hxn66q1ER7cjkLK");
+  console.log({frequencyHours: pocket.frequency.hours.toNumber()});
   // await initializeAccount(provider, fixtures);
   // await addOperator(provider, fixtures);
   // await createPocket(provider, fixtures);
-  await executeSwap(provider, fixtures);
+  // await executeSwap(provider, fixtures);
   // await cancelAndWithdraw(provider, fixtures);
 };

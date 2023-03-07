@@ -41,7 +41,8 @@ impl<'info> CreateTokenVaultContext<'info> {
                 actor: self.signer.key().clone(),
                 authority: self.pocket.key().clone(),
                 associated_account: self.pocket_token_vault.key().clone(),
-                mint_account: self.mint_account.key().clone()
+                mint_account: self.mint_account.key().clone(),
+                pocket_address: self.pocket.key().clone()
             }
         );
 

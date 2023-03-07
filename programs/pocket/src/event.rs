@@ -29,6 +29,8 @@ pub struct VaultCreated {
     pub mint_account: Pubkey,
     #[index]
     pub associated_account: Pubkey,
+    #[index]
+    pub pocket_address: Pubkey,
 }
 
 /// Emitted when a [PocketCreated] is created.
