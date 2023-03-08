@@ -314,6 +314,7 @@ impl Pocket {
         assert_ne!(pocket.owner, Pubkey::default(), "OWNER_IS_NOT_VALID");
         assert_ne!(pocket.base_token_mint_address, Pubkey::default(), "BASE_MINT_IS_NOT_VALID");
         assert_ne!(pocket.quote_token_mint_address, Pubkey::default(), "QUOTE_MINT_IS_NOT_VALID");
+        assert_ne!(pocket.market_key, Pubkey::default(), "MARKET_KEY_IS_NOT_VALID");
 
         assert_eq!(pocket.start_at >= Clock::get().unwrap().unix_timestamp as u64, true, "TIMESTAMP_IS_NOT_VALID");
         assert_eq!(pocket.frequency.hours > 0, true, "FREQUENCY_IS_NOT_VALID");
