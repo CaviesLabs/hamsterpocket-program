@@ -137,6 +137,9 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
   let marketAddress = new PublicKey(marketSOLUSDT.marketId);
   let programAddress = new PublicKey(marketSOLUSDT.marketProgramId);
 
+  const pocket = await program.account.pocket.fetch(pocketAccount);
+  console.log(new Date(pocket.startAt.toNumber() * 1000));
+
   let market = await Market.load(provider.connection, marketAddress, {}, programAddress);
 
   // const desiredOpenOrderAccount = new Keypair();
@@ -172,8 +175,7 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
         pocket: pocketAccount
       }).instruction()
     );
-  }
-  ;
+  };
 
   const cleanUpInx = [];
 
@@ -210,11 +212,12 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
       { pubkey: desiredOpenOrderAccount, isSigner: false, isWritable: true },
       { pubkey: programAddress, isSigner: false, isWritable: false }
     ]).signers([deployer.payer])
-    .rpc({ commitment: "confirmed" })
+    // .rpc({ commitment: "confirmed" })
+    .simulate({ commitment: "confirmed" })
     .catch(e => console.log(e));
-  //
+
   // // expect log
-  const transaction = await provider.connection.getParsedTransaction(txId as string, {
+  const transaction = await provider.connection.getParsedTransaction(txId as any, {
     commitment: "confirmed"
   });
 
@@ -224,7 +227,6 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
   );
 
   const events = eventParser.parseLogs(transaction.meta.logMessages);
-
 
   for (let event of events) {
     console.log(event.name, event.data);
@@ -344,7 +346,7 @@ const createPocket = async (provider: AnchorProvider, fixtures: Fixtures) => {
     }],
     buyCondition: {
       gte: {
-        value: new anchor.BN("2000000")
+        value: new anchor.BN("1000000")
       }
     },
     startAt: new anchor.BN(parseInt(String(new Date().getTime() / 1000 + 10))),
@@ -378,7 +380,7 @@ const addOperator = async (provider: AnchorProvider, fixtures: Fixtures) => {
   const operator = new PublicKey("HdWkKSDM2UDdtbiwh2fAHunyDckEnZde6mehYMH2hiBq");
 
   await program.methods.updatePocketRegistry({
-    operators: [operator]
+    operators: [operator, deployer.publicKey]
   }).accounts({
     pocketRegistry,
     owner: deployer.publicKey
@@ -448,11 +450,10 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
 
 module.exports = async function(provider: AnchorProvider) {
   const fixtures = await getFixtures(provider, {
-    pocketId: "6405a8e649cfded6a9edd4ff"
+    pocketId: "64088a55456125932e89eff7"
   });
-
-  const pocket = await fixtures.program.account.pocket.fetch("DezKUnbp1wjQr9dxfdbUboAXfz6B1Hxn66q1ER7cjkLK");
-  console.log({frequencyHours: pocket.frequency.hours.toNumber()});
+const pocket = await fixtures.program.account.pocket.fetch(fixtures.pocketAccount);
+  console.log(pocket.frequency.hours.toNumber());
   // await initializeAccount(provider, fixtures);
   // await addOperator(provider, fixtures);
   // await createPocket(provider, fixtures);
