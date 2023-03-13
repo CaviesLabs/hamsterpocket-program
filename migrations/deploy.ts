@@ -450,10 +450,14 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
 
 module.exports = async function(provider: AnchorProvider) {
   const fixtures = await getFixtures(provider, {
-    pocketId: "64088a55456125932e89eff7"
+    pocketId: "6409f62048bc0b35deb9da40"
   });
 const pocket = await fixtures.program.account.pocket.fetch(fixtures.pocketAccount);
+console.log({pocket});
   console.log(pocket.frequency.hours.toNumber());
+  console.log(pocket.stopConditions.map(elm => console.log(
+    new Date(elm.endTimeReach.value.toNumber() * 1000)
+  )));
   // await initializeAccount(provider, fixtures);
   // await addOperator(provider, fixtures);
   // await createPocket(provider, fixtures);
