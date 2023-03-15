@@ -67,7 +67,7 @@ Hamsterpocket (Pocket) is an Open Source self-managed dollar-cost-averaging prot
 
   • Set-and-forget vaults for medium or long-term spot purchases
 
-## **Protype Design & Test cases** 🚴
+## **Prototype Design & Test cases** 🚴
 
 - [**Figma**](https://www.figma.com/file/Tx32sB0eC2iwkBD7rZRRut/Hamsterpocket-(DCA)?node-id=1902%3A43690&t=JpssstVDMVaaWHSf-0)
 - [**Test cases**](https://docs.google.com/spreadsheets/d/1xdPHErMtTJtk0zH2-huzkDcuJx9lwZgb/edit#gid=1292533007)
