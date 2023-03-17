@@ -10,7 +10,7 @@
 
 <p align="center">
      <a href="https://pocket.hamsterbox.xyz">
-        Lanch DApp
+        Launch DApp
     </a> |
     <a href="https://cavies.xyz/">
         About Cavies
