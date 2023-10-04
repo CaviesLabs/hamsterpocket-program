@@ -21,6 +21,7 @@ import { AnchorProvider } from "@project-serum/anchor/dist/cjs/provider";
 import { BorshCoder, EventParser, IdlTypes } from "@project-serum/anchor";
 
 import { IDL, Pocket } from "../target/types/pocket";
+
 type ProgramPocketTypes = IdlTypes<Pocket>;
 type Fixtures = Awaited<ReturnType<typeof getFixtures>>;
 
@@ -175,7 +176,8 @@ const executeSwap = async (provider: AnchorProvider, fixtures: Fixtures) => {
         pocket: pocketAccount
       }).instruction()
     );
-  };
+  }
+  ;
 
   const cleanUpInx = [];
 
@@ -377,7 +379,8 @@ const addOperator = async (provider: AnchorProvider, fixtures: Fixtures) => {
     deployer
   } = fixtures;
 
-  const operator = new PublicKey("HdWkKSDM2UDdtbiwh2fAHunyDckEnZde6mehYMH2hiBq");
+  // const operator = new PublicKey("HdWkKSDM2UDdtbiwh2fAHunyDckEnZde6mehYMH2hiBq");
+  const operator = new PublicKey("FDe1Kp6FyrmJKMdnG1yuxFyGynq8wgrHTaz1UFNQ5Y5E");
 
   await program.methods.updatePocketRegistry({
     operators: [operator, deployer.publicKey]
@@ -385,7 +388,7 @@ const addOperator = async (provider: AnchorProvider, fixtures: Fixtures) => {
     pocketRegistry,
     owner: deployer.publicKey
   }).signers([deployer.payer])
-    .rpc({ commitment: "confirmed" })
+    .rpc({ commitment: "processed" })
     .catch(e => console.log(e));
 };
 
@@ -450,16 +453,16 @@ const cancelAndWithdraw = async (provider: AnchorProvider, fixtures: Fixtures) =
 
 module.exports = async function(provider: AnchorProvider) {
   const fixtures = await getFixtures(provider, {
-    pocketId: "6409f62048bc0b35deb9da40"
+    pocketId: null
   });
-const pocket = await fixtures.program.account.pocket.fetch(fixtures.pocketAccount);
-console.log({pocket});
-  console.log(pocket.frequency.hours.toNumber());
-  console.log(pocket.stopConditions.map(elm => console.log(
-    new Date(elm.endTimeReach.value.toNumber() * 1000)
-  )));
+  // const pocket = await fixtures.program.account.pocket.fetch(fixtures.pocketAccount);
+  // console.log({ pocket });
+  // console.log(pocket.frequency.hours.toNumber());
+  // console.log(pocket.stopConditions.map(elm => console.log(
+  //   new Date(elm.endTimeReach.value.toNumber() * 1000)
+  // )));
   // await initializeAccount(provider, fixtures);
-  // await addOperator(provider, fixtures);
+  await addOperator(provider, fixtures);
   // await createPocket(provider, fixtures);
   // await executeSwap(provider, fixtures);
   // await cancelAndWithdraw(provider, fixtures);
